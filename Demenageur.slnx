@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Demenageur.App/Demenageur.App.csproj" />
+    <Project Path="src/Demenageur.Core/Demenageur.Core.csproj" />
+    <Project Path="src/Demenageur.Windows/Demenageur.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Demenageur.TestHost/Demenageur.TestHost.csproj" />
+    <Project Path="tests/Demenageur.Tests/Demenageur.Tests.csproj" />
+  </Folder>
+</Solution>

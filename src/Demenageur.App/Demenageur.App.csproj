@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Demenageur.App</RootNamespace>
+    <AssemblyName>Demenageur</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess>
+    <!-- App élevée : aucun code ne doit pouvoir être injecté au démarrage via DOTNET_STARTUP_HOOKS. -->
+    <StartupHookSupport>false</StartupHookSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Demenageur.Core\Demenageur.Core.csproj" />
+    <ProjectReference Include="..\Demenageur.Windows\Demenageur.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

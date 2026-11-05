@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Implémentations réelles des abstractions de Demenageur.Core : Win32 (P/Invoke), WMI, Restart Manager,
+    registre en LECTURE SEULE. C'est le seul projet autorisé à toucher directement au disque.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Demenageur.Windows</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Demenageur.Core\Demenageur.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Demenageur.Tests" />
+  </ItemGroup>
+
+</Project>

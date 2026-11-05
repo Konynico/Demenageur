@@ -1,0 +1,27 @@
+<ui:FluentWindow x:Class="Demenageur.App.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Déménageur"
+                 Width="1200"
+                 Height="780"
+                 MinWidth="900"
+                 MinHeight="600"
+                 WindowStartupLocation="CenterScreen"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 WindowCornerPreference="Round">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="Déménageur" />
+
+        <StackPanel Grid.Row="1" Margin="24">
+            <TextBlock FontSize="24" FontWeight="SemiBold" Text="Déménageur" />
+            <TextBlock Margin="0,8,0,0" Text="Squelette de l'application (étape 0)." />
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>

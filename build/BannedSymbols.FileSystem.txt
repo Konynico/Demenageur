@@ -1,0 +1,17 @@
+T:System.IO.File;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.Directory;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.FileInfo;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.DirectoryInfo;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.FileSystemInfo;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.DriveInfo;Passer par IVolumeInspector
+T:System.IO.FileStream;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.RandomAccess;Passer par IFileSystem (garde de périmètre + identité vérifiée)
+T:System.IO.FileSystemWatcher;Passer par IFileSystem
+T:System.IO.Enumeration.FileSystemEnumerable`1;Énumération .NET piégée (fichiers cachés ignorés, jonctions suivies) : utiliser IFileSystem
+T:System.IO.Enumeration.FileSystemEnumerator`1;Énumération .NET piégée (fichiers cachés ignorés, jonctions suivies) : utiliser IFileSystem
+T:System.IO.EnumerationOptions;Énumération .NET piégée (fichiers cachés ignorés, jonctions suivies) : utiliser IFileSystem
+T:Microsoft.Win32.Registry;Le registre n'est lu que par Demenageur.Windows (adaptateur en lecture seule)
+T:Microsoft.Win32.RegistryKey;Le registre n'est lu que par Demenageur.Windows (adaptateur en lecture seule)
+T:System.Diagnostics.Process;Aucun lancement de processus hors de Demenageur.Windows (l'app ne lance jamais un logiciel déplacé)
+M:System.Environment.GetFolderPath(System.Environment.SpecialFolder);Passer par IKnownPaths
+M:System.Environment.GetFolderPath(System.Environment.SpecialFolder,System.Environment.SpecialFolderOption);Passer par IKnownPaths

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Logique pure de Déménageur (aucune dépendance WPF).
+    Aucun accès direct au disque, au registre ou aux processus : tout passe par les abstractions
+    (IFileSystem, inspecteurs système) implémentées dans Demenageur.Windows.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Demenageur.Core</RootNamespace>
+    <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Hashing" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Demenageur.Tests" />
+  </ItemGroup>
+
+</Project>

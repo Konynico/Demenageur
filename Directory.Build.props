@@ -1,0 +1,22 @@
+<Project>
+  <!-- Propriétés communes à tous les projets de la solution Déménageur. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <Company>Déménageur</Company>
+    <Product>Déménageur</Product>
+    <NeutralLanguage>fr-FR</NeutralLanguage>
+    <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <!-- Une API interdite (RS0030) est une erreur de compilation, pas un simple avertissement. -->
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030;RS0031;RS0035</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Garantie à la compilation : aucune écriture dans le registre, dans aucun projet. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)build\BannedSymbols.Registry.txt" />
+  </ItemGroup>
+</Project>

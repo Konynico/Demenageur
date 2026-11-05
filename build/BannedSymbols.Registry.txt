@@ -1,0 +1,23 @@
+M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,Microsoft.Win32.RegistryKeyPermissionCheck);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,Microsoft.Win32.RegistryKeyPermissionCheck,Microsoft.Win32.RegistryOptions);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,Microsoft.Win32.RegistryKeyPermissionCheck,System.Security.AccessControl.RegistrySecurity);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,Microsoft.Win32.RegistryKeyPermissionCheck,Microsoft.Win32.RegistryOptions,System.Security.AccessControl.RegistrySecurity);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.DeleteValue(System.String);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean);Ouverture en écriture possible : utiliser OpenSubKey(string), en lecture seule
+M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,Microsoft.Win32.RegistryKeyPermissionCheck);Ouverture en écriture possible : utiliser OpenSubKey(string), en lecture seule
+M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,Microsoft.Win32.RegistryKeyPermissionCheck,System.Security.AccessControl.RegistryRights);Ouverture en écriture possible : utiliser OpenSubKey(string), en lecture seule
+M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights);Ouverture en écriture possible : utiliser OpenSubKey(string), en lecture seule
+M:Microsoft.Win32.RegistryKey.SetAccessControl(System.Security.AccessControl.RegistrySecurity);Déménageur ne modifie jamais le registre
+M:Microsoft.Win32.RegistryKey.Flush;Déménageur ne modifie jamais le registre

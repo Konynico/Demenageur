@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    Les projets qui posent <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess> (Core, App, TestHost)
+    n'ont pas le droit d'accéder directement au disque, au registre ou aux processus :
+    tout passe par IFileSystem et les services de Demenageur.Windows (PathGuard, identité vérifiée).
+  -->
+  <ItemGroup Condition="'$(BanDirectFileSystemAccess)' == 'true'">
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)build\BannedSymbols.FileSystem.txt" />
+  </ItemGroup>
+</Project>

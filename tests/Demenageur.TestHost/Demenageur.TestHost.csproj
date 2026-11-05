@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Petite console utilisée uniquement par les tests de crash : elle exécute une opération
+    sur des dossiers factices et se tue volontairement à la N-ième opération disque.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Demenageur.TestHost</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Demenageur.Core\Demenageur.Core.csproj" />
+    <ProjectReference Include="..\..\src\Demenageur.Windows\Demenageur.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

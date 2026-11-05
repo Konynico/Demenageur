@@ -1,0 +1,11 @@
+* text=auto
+*.cs text diff=csharp
+*.xaml text
+*.csproj text
+*.props text
+*.targets text
+*.slnx text
+*.json text
+*.md text
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
