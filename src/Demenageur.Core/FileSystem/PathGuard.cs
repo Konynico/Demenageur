@@ -49,7 +49,7 @@ public sealed class PathGuard : IFileSystem
     private string CheckRead(string path, bool followFinalLink = false)
     {
         var canonical = Canonicalize(_inner, path, followFinalLink);
-        if (Scope.SandboxRoot is not null && !PathUtil.IsWithin(canonical, Scope.SandboxRoot))
+        if (!Scope.IsInSandbox(canonical))
         {
             throw new PathGuardViolationException(
                 $"Lecture hors du bac à sable refusée : « {path} » → « {canonical} ».", path);
@@ -67,7 +67,7 @@ public sealed class PathGuard : IFileSystem
 
     private void CheckWriteCanonical(string canonical, string requested)
     {
-        if (Scope.SandboxRoot is not null && !PathUtil.IsWithin(canonical, Scope.SandboxRoot))
+        if (!Scope.IsInSandbox(canonical))
         {
             throw new PathGuardViolationException(
                 $"Modification hors du bac à sable refusée : « {requested} » → « {canonical} ».", requested);

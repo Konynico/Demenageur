@@ -92,11 +92,12 @@ public interface IPathScopeFactory
 /// <summary>Périmètre avec listes de chemins protégés fixes (et bac à sable facultatif pour les tests).</summary>
 public sealed class PathScopeFactory : IPathScopeFactory
 {
-    public PathScopeFactory(IReadOnlyList<string> protectedExact, IReadOnlyList<string> protectedSubtrees, string? sandboxRoot = null)
+    public PathScopeFactory(IReadOnlyList<string> protectedExact, IReadOnlyList<string> protectedSubtrees, string? sandboxRoot = null, IReadOnlyList<string>? additionalSandboxRoots = null)
     {
         ProtectedExact = protectedExact;
         ProtectedSubtrees = protectedSubtrees;
         SandboxRoot = sandboxRoot;
+        AdditionalSandboxRoots = additionalSandboxRoots ?? [];
     }
 
     public IReadOnlyList<string> ProtectedExact { get; }
@@ -105,8 +106,10 @@ public sealed class PathScopeFactory : IPathScopeFactory
 
     public string? SandboxRoot { get; }
 
+    public IReadOnlyList<string> AdditionalSandboxRoots { get; }
+
     public PathScope Create(IFileSystem inner, IEnumerable<string> writableRoots)
-        => PathScope.Create(inner, writableRoots, ProtectedExact, ProtectedSubtrees, SandboxRoot);
+        => PathScope.Create(inner, writableRoots, ProtectedExact, ProtectedSubtrees, SandboxRoot, AdditionalSandboxRoots);
 }
 
 /// <summary>Dépendances du moteur de déplacement.</summary>

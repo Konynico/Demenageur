@@ -196,11 +196,6 @@ public sealed class TreeCopier
         {
             cancellationToken.ThrowIfCancellationRequested();
             var attributes = entry.CopiedAttributeValue;
-            if (attributes == 0 && entry.Kind == FsEntryKind.Link)
-            {
-                continue;
-            }
-
             var destination = PathUtil.JoinRelative(destinationRoot, entry.RelativePath);
             _retry.Execute(() => _fs.SetBasicInfo(destination, entry.DestinationIdentity!.Value, default, attributes == 0 ? FileAttributes.Normal : attributes), cancellationToken);
         }
@@ -238,8 +233,10 @@ public sealed class TreeCopier
     {
         cancellationToken.ThrowIfCancellationRequested();
         var destination = PathUtil.JoinRelative(destinationRoot, entry.RelativePath);
+        // Toujours explicite (liens compris) : sinon un élément garde les attributs hérités du disque cible
+        // (par exemple « non indexé » quand l'indexation y est désactivée).
         var attributes = entry.CopiedAttributeValue;
-        if (attributes == 0 && entry.Kind != FsEntryKind.Link)
+        if (attributes == 0)
         {
             attributes = FileAttributes.Normal;
         }

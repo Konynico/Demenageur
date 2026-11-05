@@ -58,7 +58,16 @@ public sealed class TestSandbox : IDisposable
     public void Dispose()
     {
         var intact = Directory.Exists(Canary) && CanaryIntact();
-        DeleteSandboxTree(Root);
+
+        // Un processus tué par un test peut libérer son dossier courant avec un léger retard : on réessaie.
+        for (var attempt = 0; attempt < 15 && Directory.Exists(Root); attempt++)
+        {
+            DeleteSandboxTree(Root);
+            if (Directory.Exists(Root))
+            {
+                Thread.Sleep(200);
+            }
+        }
         if (!intact)
         {
             throw new InvalidOperationException("Le dossier canari a été modifié pendant le test : violation du périmètre !");
@@ -115,6 +124,17 @@ public sealed class TestSandbox : IDisposable
         }
 
         return Convert.ToHexString(hasher.GetCurrentHash());
+    }
+
+    /// <summary>Supprime un dossier de test situé sur un autre disque (son chemin doit contenir « \DemenageurTests\ »).</summary>
+    public static void DeleteForeignTestTree(string root)
+    {
+        if (!root.Contains(@"\DemenageurTests\", StringComparison.OrdinalIgnoreCase) || !Directory.Exists(root))
+        {
+            return;
+        }
+
+        DeleteRecursive(@"\\?\" + root);
     }
 
     /// <summary>Supprime le bac à sable sans jamais suivre une jonction (un lien est supprimé, pas sa cible).</summary>

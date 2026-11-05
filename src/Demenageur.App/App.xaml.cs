@@ -105,6 +105,12 @@ public partial class App : Application
             var viewModel = _host.Services.GetRequiredService<MainViewModel>();
             if (!engine.IsPreview)
             {
+                if (Demenageur.Windows.Security.ApplicationFolderCheck.FindWeakness(AppContext.BaseDirectory) is { } weakness)
+                {
+                    Log.Warning("{Weakness}", weakness);
+                    viewModel.StartupMessages.Add(weakness);
+                }
+
                 WindowsMoveHooks.RecoverExplorer(engine.Data.DataRoot);
                 var recovered = await Task.Run(engine.RecoverPending);
                 foreach (var (operation, result) in recovered)

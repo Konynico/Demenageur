@@ -9,12 +9,12 @@ public sealed class PathScope
         IReadOnlyList<string> writableRoots,
         IReadOnlyList<string> protectedExact,
         IReadOnlyList<string> protectedSubtrees,
-        string? sandboxRoot)
+        IReadOnlyList<string> sandboxRoots)
     {
         WritableRoots = writableRoots;
         ProtectedExact = protectedExact;
         ProtectedSubtrees = protectedSubtrees;
-        SandboxRoot = sandboxRoot;
+        SandboxRoots = sandboxRoots;
     }
 
     /// <summary>Racines (et leurs sous-arborescences) où les modifications sont autorisées.</summary>
@@ -26,8 +26,11 @@ public sealed class PathScope
     /// <summary>Arborescences entièrement intouchables : Windows, WindowsApps…</summary>
     public IReadOnlyList<string> ProtectedSubtrees { get; }
 
-    /// <summary>Si défini (tests), TOUTE opération, lecture comprise, doit rester dans ce dossier.</summary>
-    public string? SandboxRoot { get; }
+    /// <summary>Si non vide (tests), TOUTE opération, lecture comprise, doit rester dans l'un de ces dossiers.</summary>
+    public IReadOnlyList<string> SandboxRoots { get; }
+
+    public bool IsInSandbox(string canonicalPath)
+        => SandboxRoots.Count == 0 || SandboxRoots.Any(root => PathUtil.IsWithin(canonicalPath, root));
 
     /// <summary>
     /// Construit un périmètre en canonicalisant chaque chemin, puis vérifie sa cohérence :
@@ -38,12 +41,13 @@ public sealed class PathScope
         IEnumerable<string> writableRoots,
         IEnumerable<string>? protectedExact = null,
         IEnumerable<string>? protectedSubtrees = null,
-        string? sandboxRoot = null)
+        string? sandboxRoot = null,
+        IEnumerable<string>? additionalSandboxRoots = null)
     {
         // Une racine est prise pour elle-même (une jonction reste la jonction, pas sa cible) ; ses parents sont résolus.
         string Canon(string p) => PathGuard.Canonicalize(inner, p, followFinalLink: false);
 
-        var sandbox = sandboxRoot is null ? null : Canon(sandboxRoot);
+        var sandboxes = (sandboxRoot is null ? [] : new[] { sandboxRoot }).Concat(additionalSandboxRoots ?? []).Select(Canon).Distinct(StringComparer.Ordinal).ToList();
         var writable = writableRoots.Select(Canon).Distinct(StringComparer.Ordinal).ToList();
         var exact = (protectedExact ?? []).Select(Canon).Distinct(StringComparer.Ordinal).ToList();
         var subtrees = (protectedSubtrees ?? []).Select(Canon).Distinct(StringComparer.Ordinal).ToList();
@@ -73,13 +77,13 @@ public sealed class PathScope
                 }
             }
 
-            if (sandbox is not null && !PathUtil.IsWithin(root, sandbox))
+            if (sandboxes.Count > 0 && !sandboxes.Any(s => PathUtil.IsWithin(root, s)))
             {
                 throw new PathGuardViolationException(
-                    $"La racine modifiable « {root} » est hors du bac à sable « {sandbox} ».", root);
+                    $"La racine modifiable « {root} » est hors du bac à sable « {string.Join(" | ", sandboxes)} ».", root);
             }
         }
 
-        return new PathScope(writable, exact, subtrees, sandbox);
+        return new PathScope(writable, exact, subtrees, sandboxes);
     }
 }
