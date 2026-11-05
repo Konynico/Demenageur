@@ -40,7 +40,8 @@ public sealed class PathScope
         IEnumerable<string>? protectedSubtrees = null,
         string? sandboxRoot = null)
     {
-        string Canon(string p) => PathGuard.Canonicalize(inner, p, followFinalLink: true);
+        // Une racine est prise pour elle-même (une jonction reste la jonction, pas sa cible) ; ses parents sont résolus.
+        string Canon(string p) => PathGuard.Canonicalize(inner, p, followFinalLink: false);
 
         var sandbox = sandboxRoot is null ? null : Canon(sandboxRoot);
         var writable = writableRoots.Select(Canon).Distinct(StringComparer.Ordinal).ToList();

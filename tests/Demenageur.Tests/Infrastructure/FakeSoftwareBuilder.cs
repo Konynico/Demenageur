@@ -48,26 +48,40 @@ public sealed class FakeSoftwareBuilder
 
     public long LargeFileSize { get; init; } = 3 * 1024 * 1024 + 123;
 
+    /// <summary>
+    /// Version réduite (tests d'injection exhaustive) : garde tous les cas piégeux (caché, système, lecture seule,
+    /// ADS, liens physiques, jonctions, dossier vide) mais avec très peu de fichiers.
+    /// </summary>
+    public bool Minimal { get; init; }
+
     public FakeSoftware Build()
     {
         Dir(string.Empty);
         Dir("bin");
-        Dir(@"bin\plugins");
         Dir("config");
-        Dir("data");
-        Dir(@"data\niveaux");
         Dir("vide");
-
-        Bytes(@"bin\app.exe", 200_000);
-        Bytes(@"bin\core.dll", 1_048_576);
-        Bytes(@"bin\plugins\a.dll", 50_000);
-        Bytes(@"bin\plugins\b.dll", 4096);
-        Bytes(@"data\gros.pak", LargeFileSize);
-        Bytes(@"data\niveaux\0-octet.lvl", 0);
-        Bytes(@"data\niveaux\4095.lvl", 4095);
-        Bytes(@"data\niveaux\4096.lvl", 4096);
-        Bytes(@"data\niveaux\4097.lvl", 4097);
         Text(@"config\settings.json", "{ \"langue\": \"fr\" }");
+
+        if (Minimal)
+        {
+            Bytes(@"bin\app.exe", 20_000);
+            Bytes(@"bin\core.dll", 60_000);
+        }
+        else
+        {
+            Dir(@"bin\plugins");
+            Dir("data");
+            Dir(@"data\niveaux");
+            Bytes(@"bin\app.exe", 200_000);
+            Bytes(@"bin\core.dll", 1_048_576);
+            Bytes(@"bin\plugins\a.dll", 50_000);
+            Bytes(@"bin\plugins\b.dll", 4096);
+            Bytes(@"data\gros.pak", LargeFileSize);
+            Bytes(@"data\niveaux\0-octet.lvl", 0);
+            Bytes(@"data\niveaux\4095.lvl", 4095);
+            Bytes(@"data\niveaux\4096.lvl", 4096);
+            Bytes(@"data\niveaux\4097.lvl", 4097);
+        }
 
         Text(FakeSoftware.HiddenFile, "cache");
         Attr(FakeSoftware.HiddenFile, FileAttributes.Hidden);

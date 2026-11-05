@@ -165,7 +165,11 @@ public sealed class TreeCopier
     /// chaque élément, puis, pour la racine, les droits effectifs de la source rendus explicites et protégés.
     /// Sans ce soin, la copie hériterait des droits du disque cible (souvent modifiables par tous).
     /// </summary>
-    public void ApplySecurity(Manifest manifest, string destinationRoot, CancellationToken cancellationToken = default)
+    /// <param name="rootSecurity">
+    /// Descripteur à poser tel quel sur la racine (annulation : permissions d'origine, héritage compris).
+    /// Null : droits effectifs de la source rendus explicites et protégés.
+    /// </param>
+    public void ApplySecurity(Manifest manifest, string destinationRoot, byte[]? rootSecurity = null, CancellationToken cancellationToken = default)
     {
         foreach (var entry in manifest.Entries.Skip(1).Where(e => e.HardLinkPrimary is null))
         {
@@ -177,7 +181,11 @@ public sealed class TreeCopier
         }
 
         var root = manifest.Root;
-        if (root.SecurityDescriptor is { } rootSd)
+        if (rootSecurity is not null)
+        {
+            SetSecurity(root, destinationRoot, rootSecurity, cancellationToken);
+        }
+        else if (root.SecurityDescriptor is { } rootSd)
         {
             SetSecurity(root, destinationRoot, SecurityDescriptorTools.ToProtectedExplicit(rootSd), cancellationToken);
         }

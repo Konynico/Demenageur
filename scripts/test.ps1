@@ -2,21 +2,23 @@
 .SYNOPSIS
   Lance les tests de Déménageur (toujours depuis un terminal NON administrateur).
 .DESCRIPTION
-  Par défaut, seuls les tests sur dossiers factices du dossier temporaire sont lancés.
-  -CrossVolume ajoute les vrais déplacements entre volumes (dossiers factices uniquement)
-  vers le dossier indiqué par -CrossVolumeDestination.
+  Par défaut : tous les tests sur dossiers factices du dossier temporaire, y compris les tests exhaustifs
+  (panne et crash à chaque opération disque : quelques minutes).
+  -Rapide       : sans les tests exhaustifs.
+  -CrossVolume  : vrais déplacements de dossiers factices entre deux volumes, vers -CrossVolumeDestination.
 .EXAMPLE
   .\scripts\test.ps1
+  .\scripts\test.ps1 -Rapide
   .\scripts\test.ps1 -CrossVolume -CrossVolumeDestination 'D:\DemenageurTests'
 #>
 param(
+    [switch]$Rapide,
     [switch]$CrossVolume,
     [string]$CrossVolumeDestination = 'D:\DemenageurTests'
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$solution = Join-Path $root 'Demenageur.slnx'
 
 $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -24,12 +26,20 @@ if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
     exit 1
 }
 
+dotnet build (Join-Path $root 'Demenageur.slnx') --nologo -v quiet
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+$exe = Join-Path $root 'tests\Demenageur.Tests\bin\Debug\net10.0-windows\Demenageur.Tests.exe'
+$arguments = @()
 if ($CrossVolume) {
     $env:DEMENAGEUR_TEST_DEST = $CrossVolumeDestination
-    dotnet test $solution --nologo --filter 'Category=CrossVolume'
+    $arguments += @('-trait', 'Category=CrossVolume')
 }
 else {
     Remove-Item Env:\DEMENAGEUR_TEST_DEST -ErrorAction SilentlyContinue
-    dotnet test $solution --nologo --filter 'Category!=CrossVolume&Category!=Admin'
+    $arguments += @('-notrait', 'Category=CrossVolume', '-notrait', 'Category=Admin')
+    if ($Rapide) { $arguments += @('-notrait', 'Category=Exhaustif') }
 }
+
+& $exe @arguments
 exit $LASTEXITCODE

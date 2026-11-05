@@ -26,17 +26,24 @@ public sealed class SafeDeleter
 
     /// <summary>Supprime exactement les éléments de l'inventaire (racine comprise).</summary>
     public DeletionResult DeleteSnapshot(TreeSnapshot snapshot, CancellationToken cancellationToken = default)
+        => DeleteEntries(snapshot.RootPath, snapshot.Entries.Select(e => (e.RelativePath, e.Info.Identity)).ToList(), cancellationToken);
+
+    /// <summary>
+    /// Supprime exactement les éléments donnés (chemin relatif + identité attendue), fournis dans l'ordre préfixe
+    /// d'un inventaire (chaque dossier avant son contenu) ; ils sont supprimés dans l'ordre inverse.
+    /// </summary>
+    public DeletionResult DeleteEntries(string rootPath, IReadOnlyList<(string RelativePath, FileIdentity Identity)> entriesInPreOrder, CancellationToken cancellationToken = default)
     {
         var deleted = 0;
         var absent = 0;
         var failures = new List<DeletionFailure>();
 
         // Ordre inverse du parcours préfixe : chaque enfant avant son dossier.
-        for (var i = snapshot.Entries.Count - 1; i >= 0; i--)
+        for (var i = entriesInPreOrder.Count - 1; i >= 0; i--)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var entry = snapshot.Entries[i];
-            var path = PathUtil.JoinRelative(snapshot.RootPath, entry.RelativePath);
+            var (relativePath, identity) = entriesInPreOrder[i];
+            var path = PathUtil.JoinRelative(rootPath, relativePath);
             try
             {
                 var current = _fs.GetEntry(path);
@@ -46,7 +53,7 @@ public sealed class SafeDeleter
                     continue;
                 }
 
-                _retry.Execute(() => _fs.Delete(path, entry.Info.Identity), cancellationToken);
+                _retry.Execute(() => _fs.Delete(path, identity), cancellationToken);
                 deleted++;
             }
             catch (FileSystemException ex)

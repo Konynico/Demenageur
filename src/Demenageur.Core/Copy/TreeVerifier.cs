@@ -40,6 +40,9 @@ public sealed record VerificationOptions
 
     /// <summary>Exiger que chaque élément ait l'identité enregistrée lors de la copie.</summary>
     public bool CheckDestinationIdentities { get; init; } = true;
+
+    /// <summary>Descripteur attendu tel quel sur la racine (annulation) ; null = droits effectifs protégés de la source.</summary>
+    public byte[]? ExpectedRootSecurity { get; init; }
 }
 
 /// <summary>
@@ -206,7 +209,9 @@ public sealed class TreeVerifier
         if (options.CompareSecurity && !isFollowedRoot && expected.SecurityDescriptor is { } expectedSd && found.SecurityDescriptor is { } actualSd)
         {
             var same = path.Length == 0
-                ? SecurityDescriptorTools.EffectiveDaclEquals(expectedSd, actualSd) && SecurityDescriptorTools.IsDaclProtected(actualSd)
+                ? options.ExpectedRootSecurity is { } expectedRoot
+                    ? SecurityDescriptorTools.DaclEquals(expectedRoot, actualSd)
+                    : SecurityDescriptorTools.EffectiveDaclEquals(expectedSd, actualSd) && SecurityDescriptorTools.IsDaclProtected(actualSd)
                 : SecurityDescriptorTools.DaclEquals(expectedSd, actualSd);
             if (!same)
             {

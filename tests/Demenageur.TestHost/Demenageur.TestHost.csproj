@@ -8,6 +8,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Demenageur.TestHost</RootNamespace>
     <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess>
   </PropertyGroup>
 
