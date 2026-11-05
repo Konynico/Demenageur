@@ -177,6 +177,11 @@ public sealed class TreeScanner
         if (options.IncludeStreams && !followedRoot && info.Kind is FsEntryKind.File or FsEntryKind.Directory)
         {
             streams = _fs.ListAlternateStreams(fullPath, info.Identity);
+            if (info.Kind == FsEntryKind.Directory && streams.Count > 0)
+            {
+                problems.Add(new ScanProblem(relative, ScanProblemCode.DirectoryStreams, ScanProblemSeverity.Blocking,
+                    $"Le dossier « {fullPath} » porte des flux de données nommés : non pris en charge."));
+            }
         }
 
         if (options.IncludeSecurity && !followedRoot)

@@ -51,6 +51,7 @@ public enum ScanProblemCode
     HardLinkInside,
     SparseFile,
     LinkInside,
+    DirectoryStreams,
 }
 
 public sealed record ScanProblem(string RelativePath, ScanProblemCode Code, ScanProblemSeverity Severity, string Message);

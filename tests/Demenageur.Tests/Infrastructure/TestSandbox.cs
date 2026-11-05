@@ -100,6 +100,23 @@ public sealed class TestSandbox : IDisposable
         return Convert.ToHexString(hasher.GetCurrentHash());
     }
 
+    /// <summary>
+    /// Empreinte des seuls noms relatifs et contenus (fichiers ordinaires), calculée par .NET indépendamment
+    /// du code testé : sert de contre-vérification d'une copie.
+    /// </summary>
+    public static string HashTreeContentOnly(string root)
+    {
+        var hasher = new XxHash128();
+        var options = new EnumerationOptions { AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = false, RecurseSubdirectories = true };
+        foreach (var file in Directory.EnumerateFiles(@"\\?\" + root, "*", options).Order(StringComparer.Ordinal))
+        {
+            hasher.Append(Encoding.Unicode.GetBytes(file[(root.Length + 4)..]));
+            hasher.Append(File.ReadAllBytes(file));
+        }
+
+        return Convert.ToHexString(hasher.GetCurrentHash());
+    }
+
     /// <summary>Supprime le bac à sable sans jamais suivre une jonction (un lien est supprimé, pas sa cible).</summary>
     public static void DeleteSandboxTree(string root)
     {
