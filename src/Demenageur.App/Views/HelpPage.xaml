@@ -1,0 +1,92 @@
+<UserControl x:Class="Demenageur.App.Views.HelpPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="900" Margin="0,0,16,24" HorizontalAlignment="Left">
+            <TextBlock Style="{StaticResource PageTitle}" Text="Aide" />
+
+            <ui:Card Margin="0,8,0,0">
+                <DockPanel>
+                    <ui:Button DockPanel.Dock="Right" VerticalAlignment="Center" Appearance="Primary" Command="{Binding StartDemoCommand}" Content="Essayer la démo">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Beaker24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="Démo sans risque" />
+                        <TextBlock Style="{StaticResource Secondary}"
+                                   Text="Déménageur crée un logiciel FICTIF (quelques fichiers et un petit script) dans un dossier « Demenageur-Demo », puis te laisse le déplacer d'un disque à l'autre et annuler le déplacement. Aucun vrai logiciel n'est touché." />
+                    </StackPanel>
+                </DockPanel>
+            </ui:Card>
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Comment ça marche : la jonction NTFS" />
+            <TextBlock Style="{StaticResource Paragraph}"
+                       Text="Une jonction est un dossier spécial qui redirige vers un autre dossier, de façon transparente pour Windows et pour les programmes. Déménageur copie le logiciel sur l'autre disque, vérifie la copie fichier par fichier, puis remplace le dossier d'origine par une jonction vers la copie. C'est exactement ce que ferait la commande « mklink /J »." />
+
+            <!--  Schéma  -->
+            <Border Margin="0,4,0,12" Padding="16" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Padding="12" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="Disque C: (presque plein)" />
+                            <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                                <ui:SymbolIcon Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Symbol="Link24" />
+                                <TextBlock Margin="6,0,0,0" FontFamily="Consolas" Text="C:\Program Files\App" />
+                            </StackPanel>
+                            <TextBlock Margin="0,6,0,0" Style="{StaticResource Secondary}" Text="Jonction : quelques octets. Raccourcis, registre et services continuent d'utiliser ce chemin." />
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <ui:SymbolIcon HorizontalAlignment="Center" FontSize="32" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Symbol="ArrowRight24" />
+                        <TextBlock HorizontalAlignment="Center" Style="{StaticResource Secondary}" Text="redirige vers" />
+                    </StackPanel>
+                    <Border Grid.Column="2" Padding="12" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="Disque D: (de la place)" />
+                            <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Folder24" />
+                                <TextBlock Margin="6,0,0,0" FontFamily="Consolas" Text="D:\Logiciels déplacés\App" />
+                            </StackPanel>
+                            <TextBlock Margin="0,6,0,0" Style="{StaticResource Secondary}" Text="Les vrais fichiers, avec les mêmes permissions, dates et attributs." />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Les étapes d'un déplacement" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="1. Simulation : tout est vérifié sans rien modifier (liste noire, processus, espace + 10 %, disque NTFS interne, lecture de chaque fichier)." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="2. Verrou : le dossier d'origine est renommé. Cela échoue si un fichier est encore ouvert, et garantit que rien ne change pendant la copie. Le logiciel est indisponible pendant la copie." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="3. Copie, puis vérification indépendante : chaque fichier est relu sans cache et comparé (empreinte XxHash128), ainsi que les dates, attributs, flux et permissions." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="4. Jonction, puis vérification à travers elle. C'est le point de non-retour : seulement ensuite, l'ancien dossier est supprimé, fichier par fichier, d'après l'inventaire." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="En cas d'erreur avant le point de non-retour (ou si tu annules), tout revient automatiquement à l'état initial. Après une coupure de courant, relance Déménageur : il termine ou annule l'opération interrompue. À aucun moment l'original n'est supprimé avant que la copie et la jonction soient vérifiées." />
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Ce qui continue de fonctionner" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Raccourcis, menu Démarrer, associations de fichiers, entrées du registre, services, tâches planifiées et désinstallation : tout utilise le chemin d'origine, qui reste valide grâce à la jonction. Déménageur ne modifie jamais le registre." />
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Les risques à connaître" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Disque cible indisponible : s'il est débranché, chiffré et verrouillé, ou si sa lettre change, le logiciel ne démarre plus (c'est pourquoi seuls les disques internes sont acceptés)." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Mises à jour : certains programmes de mise à jour préparent leurs fichiers dans %TEMP% (sur C:) et ne savent pas les déplacer vers un autre disque (erreur « périphérique différent ») ; d'autres suppriment puis recréent le dossier, ce qui remplace la jonction (signalé dans « Mes déplacements »). En cas d'échec d'une mise à jour : annule le déplacement, fais la mise à jour, puis redéplace." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Pare-feu : une règle « autoriser ce programme » peut ne plus correspondre, car Windows voit le chemin réel sur D:. Windows redemandera l'autorisation." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Logiciels qui cherchent un dossier voisin par un chemin relatif (..\), DRM ou anti-triche qui vérifient leur emplacement, applications UIAccess ou règles AppLocker exigeant Program Files : ils peuvent refuser de fonctionner depuis un autre disque." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Restauration du système et mises à niveau majeures de Windows : annule d'abord les déplacements. Un point de restauration ne sauvegarde pas les fichiers des logiciels." />
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Annuler un déplacement" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Dans « Mes déplacements », choisis le logiciel puis « Annuler le déplacement… ». Déménageur recopie l'état ACTUEL du logiciel (mises à jour comprises) à son emplacement d'origine, vérifie, remplace la jonction, puis supprime la copie." />
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Procédure manuelle de secours" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Si Déménageur n'est plus disponible, dans une invite de commandes lancée en administrateur (le fichier LISEZMOI-Demenageur.txt du dossier de destination liste les chemins) :" />
+            <Border Padding="12" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
+                <TextBlock FontFamily="Consolas" TextWrapping="Wrap"
+                           Text="rmdir &quot;C:\Program Files\App&quot;&#x0a;robocopy &quot;D:\Logiciels déplacés\App&quot; &quot;C:\Program Files\App&quot; /E /COPYALL /DCOPY:DAT /XJ&#x0a;(vérifier que le logiciel fonctionne, puis supprimer la copie sur D:)" />
+            </Border>
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource Secondary}" Text="« rmdir » sans /S supprime uniquement la jonction, jamais les fichiers vers lesquels elle pointe." />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

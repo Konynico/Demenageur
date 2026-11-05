@@ -1,0 +1,62 @@
+<UserControl x:Class="Demenageur.App.Views.JournalPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Demenageur.App.ViewModels">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="360" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Row="0" Grid.ColumnSpan="2">
+            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                <ui:Button Margin="0,0,8,0" Command="{Binding LoadCommand}" Content="Actualiser" />
+                <ui:Button Margin="0,0,8,0" Command="{Binding OpenOperationsCommand}" Content="Dossier des journaux" />
+                <ui:Button Command="{Binding OpenLogsCommand}" Content="Logs techniques" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitle}" Text="Journal des opérations" />
+                <TextBlock Style="{StaticResource Secondary}" Text="Chaque étape de chaque opération, telle qu'inscrite sur le disque (journal en ajout seul, vérifié par CRC)." />
+            </StackPanel>
+        </DockPanel>
+
+        <ListBox Grid.Row="1" Grid.Column="0" Margin="0,12,8,0" ItemsSource="{Binding Operations}" SelectedItem="{Binding Selected}" BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:OperationLine}">
+                    <StackPanel Margin="2,4">
+                        <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource Secondary}">
+                            <Run Text="{Binding Date, Mode=OneWay}" /> <Run Text="·" /> <Run Text="{Binding State, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <ui:Card Grid.Row="1" Grid.Column="1" Margin="0,12,0,0" VerticalContentAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Selected.Records}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Style="{StaticResource Secondary}" Text="{Binding Time, StringFormat=HH:mm:ss}" />
+                                <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding Step}" />
+                                <TextBlock Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </ui:Card>
+    </Grid>
+</UserControl>

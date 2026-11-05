@@ -1,0 +1,90 @@
+<UserControl x:Class="Demenageur.App.Views.MovesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Demenageur.App.ViewModels">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0">
+            <ui:Button DockPanel.Dock="Right" VerticalAlignment="Center" Command="{Binding LoadCommand}" Content="Actualiser">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitle}" Text="Mes déplacements" />
+                <TextBlock Style="{StaticResource Secondary}" Text="Logiciels déplacés par Déménageur, avec l'état de leur jonction et de leur copie." />
+            </StackPanel>
+        </DockPanel>
+
+        <ItemsControl Grid.Row="1" Margin="0,8,0,0" ItemsSource="{Binding Attention}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <ui:InfoBar Title="Opération en attente de décision" Margin="0,0,0,6" IsClosable="False" IsOpen="True" Message="{Binding}" Severity="Warning" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Secondary}"
+                       Text="Aucun logiciel déplacé pour l'instant." Visibility="{Binding Items, Converter={StaticResource NotEmptyToVisibility}, ConverterParameter=inverse}" />
+            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:MovedItemViewModel}">
+                        <Grid Margin="4,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:SymbolIcon Grid.Column="0" VerticalAlignment="Top" FontSize="22"
+                                           Foreground="{Binding Level, Converter={StaticResource LevelToBrush}}" Symbol="{Binding Level, Converter={StaticResource LevelToSymbol}}" />
+                            <StackPanel Grid.Column="1">
+                                <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding Name}" />
+                                <TextBlock Style="{StaticResource Secondary}">
+                                    <Run Text="{Binding Source, Mode=OneWay}" /> <Run Text="⇢" /> <Run Text="{Binding Destination, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource Secondary}">
+                                    <Run Text="{Binding HealthText, Mode=OneWay}" FontWeight="SemiBold" /> <Run Text="—" /> <Run Text="{Binding HealthMessage, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Margin="0,2,0,0" Style="{StaticResource Secondary}" Text="{Binding Integrity}" Visibility="{Binding Integrity, Converter={StaticResource NotEmptyToVisibility}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                                <TextBlock Margin="0,0,12,0" VerticalAlignment="Center" Style="{StaticResource Secondary}" Text="{Binding Date}" />
+                                <ui:Button Margin="0,0,6,0" Command="{Binding DataContext.OpenSourceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" ToolTip="Ouvrir l'emplacement d'origine">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Link24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button Command="{Binding DataContext.OpenDestinationCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" ToolTip="Ouvrir la copie">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="FolderOpen24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Margin="0,8,0,0" HorizontalAlignment="Right" Orientation="Horizontal">
+            <ui:Button Margin="0,0,8,0" Command="{Binding CheckIntegrityCommand}" Content="Vérifier l'intégrité">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ShieldCheckmark24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button Appearance="Primary" Command="{Binding UndoCommand}" Content="Annuler le déplacement…">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowUndo24" />
+                </ui:Button.Icon>
+            </ui:Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

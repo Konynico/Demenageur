@@ -1,0 +1,46 @@
+<UserControl x:Class="Demenageur.App.Views.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+            <TextBlock Style="{StaticResource PageTitle}" Text="Paramètres" />
+
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
+                    <ui:ToggleSwitch Content="Simulation uniquement (aucune opération réelle possible)" IsChecked="{Binding SimulationOnly}" />
+                    <TextBlock Margin="0,4,0,0" Style="{StaticResource Secondary}" Text="Pratique pour explorer l'application en toute sécurité : toutes les analyses restent disponibles." />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
+                    <ui:ToggleSwitch Content="Proposer un point de restauration avant chaque déplacement" IsChecked="{Binding RestorePointByDefault}" />
+                    <TextBlock Margin="0,6,0,6" Style="{StaticResource Secondary}" Text="{Binding RestorePointText}" />
+                    <ui:Button HorizontalAlignment="Left" Command="{Binding OpenSystemProtectionCommand}" Content="Ouvrir « Protection du système » (Windows)" />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Dossier de destination sur chaque disque" />
+                    <ui:TextBox Margin="0,6,0,0" Text="{Binding DestinationFolderName, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Margin="0,4,0,0" Style="{StaticResource Secondary}" Text="Exemple : D:\Logiciels déplacés\NomDuLogiciel. Créé par Déménageur avec des permissions réservées aux administrateurs (lecture pour les utilisateurs)." />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Données de l'application" />
+                    <TextBlock Margin="0,4,0,6" Style="{StaticResource Secondary}" Text="{Binding DataFolder}" />
+                    <ui:Button HorizontalAlignment="Left" Command="{Binding OpenDataFolderCommand}" Content="Ouvrir le dossier" />
+                </StackPanel>
+            </ui:Card>
+
+            <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                <ui:Button Appearance="Primary" Command="{Binding SaveCommand}" Content="Enregistrer" />
+                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Style="{StaticResource Secondary}" Text="{Binding SavedMessage}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

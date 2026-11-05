@@ -79,6 +79,16 @@ public sealed class SecureAppDataLocation : IAppDataLocation
     }
 
     /// <summary>
+    /// Mode aperçu (développement de l'interface, sans droits administrateur, simulation uniquement) :
+    /// simples dossiers, sans ACL particulière. Jamais utilisé par l'application réelle.
+    /// </summary>
+    public void EnsurePreviewDirectories()
+    {
+        Directory.CreateDirectory(LogsDirectory);
+        Directory.CreateDirectory(OperationsDirectory);
+    }
+
+    /// <summary>
     /// ACL attendue : propriétaire Administrateurs, DACL protégée (pas d'héritage du parent),
     /// contrôle total pour SYSTEM et Administrateurs, aucun autre accès.
     /// </summary>

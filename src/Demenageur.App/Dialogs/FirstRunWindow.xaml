@@ -1,0 +1,61 @@
+<ui:FluentWindow x:Class="Demenageur.App.Dialogs.FirstRunWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Avant de commencer — Déménageur"
+                 Width="760"
+                 Height="720"
+                 WindowStartupLocation="CenterScreen"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 ResizeMode="NoResize">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Grid.Row="0" Title="Avant de commencer" ShowMaximize="False" ShowMinimize="False" />
+
+        <ScrollViewer Grid.Row="1" Margin="28,4,28,8" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon FontSize="34" Foreground="#D86B00" Symbol="Warning24" />
+                    <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" FontSize="22" FontWeight="SemiBold" Text="À lire avant d'utiliser Déménageur" />
+                </StackPanel>
+                <TextBlock Margin="0,14,0,8" Style="{StaticResource Paragraph}"
+                           Text="Déménageur déplace des logiciels installés vers un autre disque, en administrateur. Il copie le logiciel, vérifie chaque fichier, puis remplace le dossier d'origine par une jonction NTFS (comme « mklink /J ») : Windows et le logiciel continuent d'utiliser le même chemin. Le registre n'est jamais modifié." />
+
+                <TextBlock Style="{StaticResource SectionTitle}" Text="Ce qui te protège" />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Une simulation complète est toujours affichée avant toute action, et un mode « Simulation uniquement » existe." />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Windows, pilotes, antivirus et composants système sont refusés ; runtimes et logiciels à services exigent une confirmation renforcée." />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• L'original n'est supprimé qu'après vérification complète de la copie et de la jonction. Toute erreur avant ce point ramène automatiquement à l'état initial, même après une coupure de courant (au lancement suivant)." />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Chaque déplacement peut être annulé plus tard (« Mes déplacements »)." />
+
+                <TextBlock Style="{StaticResource SectionTitle}" Text="Les risques qui restent" />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Si le disque de destination est débranché, chiffré et verrouillé, ou change de lettre, les logiciels déplacés ne démarrent plus." />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Certaines mises à jour automatiques peuvent échouer ou recréer le dossier d'origine ; certains logiciels (DRM, anti-triche, règles de pare-feu par chemin) n'apprécient pas d'être déplacés. En cas de souci : annule le déplacement." />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Avant une restauration système ou une mise à niveau majeure de Windows, annule d'abord les déplacements." />
+                <TextBlock Style="{StaticResource Paragraph}" Text="• Aucun outil n'est infaillible : garde une sauvegarde de tes données importantes." />
+
+                <ui:Card Margin="0,8,0,0">
+                    <DockPanel>
+                        <ui:Button DockPanel.Dock="Right" VerticalAlignment="Center" Click="OnDemo" Content="Essayer la démo" />
+                        <TextBlock Margin="0,0,12,0" Style="{StaticResource Secondary}"
+                                   Text="Pour voir comment ça marche sans toucher à un vrai logiciel : la démo déplace un logiciel fictif d'un disque à l'autre, puis l'annule. (Accessible aussi depuis l'Aide.)" />
+                    </DockPanel>
+                </ui:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Padding="28,14" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <ui:Button Margin="0,0,8,0" Click="OnQuit" Content="Quitter" />
+                    <ui:Button x:Name="ContinueButton" Appearance="Primary" Click="OnContinue" Content="Continuer" IsEnabled="False" />
+                </StackPanel>
+                <CheckBox x:Name="Understood" VerticalAlignment="Center" Checked="OnUnderstoodChanged" Content="J'ai lu et compris ces informations." Unchecked="OnUnderstoodChanged" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

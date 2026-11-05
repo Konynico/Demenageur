@@ -40,6 +40,9 @@ public sealed class MovePlan
 
     public IReadOnlyList<ProcessUsage> Processes { get; init; } = [];
 
+    /// <summary>Exécutables et bibliothèques du logiciel (dernière vérification des processus, arrêt ciblé de l'Explorateur).</summary>
+    public IReadOnlyList<string> ExecutableFiles { get; init; } = [];
+
     /// <summary>Étapes, avec le détail de ce qui serait fait.</summary>
     public required IReadOnlyList<(string Step, string Detail)> Steps { get; init; }
 
@@ -289,6 +292,7 @@ public sealed class MovePlanner
             SourceVolume = sourceVolume,
             DestinationVolume = destinationVolume,
             Processes = processes,
+            ExecutableFiles = files,
             Steps = steps,
             EstimatedDuration = duration,
         };

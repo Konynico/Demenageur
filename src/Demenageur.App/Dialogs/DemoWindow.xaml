@@ -1,0 +1,37 @@
+<ui:FluentWindow x:Class="Demenageur.App.Dialogs.DemoWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Démo sans risque"
+                 Width="620"
+                 Height="440"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Grid.Row="0" Title="Démo sans risque" ShowMaximize="False" ShowMinimize="False" />
+        <StackPanel Grid.Row="1" Margin="24,4,24,8">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Déplacer un logiciel fictif" />
+            <TextBlock Margin="0,8,0,12" Style="{StaticResource Paragraph}"
+                       Text="Un faux logiciel « LogicielFictif » (quelques fichiers, un fichier caché, un fichier en lecture seule et un script LogicielFictif.cmd) est créé dans le dossier « Demenageur-Demo » du premier disque. Tu pourras le déplacer vers le second, lancer le script à travers la jonction, puis annuler le déplacement depuis « Mes déplacements »." />
+            <TextBlock Text="Disque où créer le logiciel fictif :" />
+            <ComboBox x:Name="SourceDrive" Margin="0,4,0,10" DisplayMemberPath="Display" />
+            <TextBlock Text="Disque de destination :" />
+            <ComboBox x:Name="DestinationDrive" Margin="0,4,0,10" DisplayMemberPath="Display" />
+            <TextBlock x:Name="ErrorText" Foreground="#C42B1C" TextWrapping="Wrap" />
+        </StackPanel>
+        <Border Grid.Row="2" Padding="24,12" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <ui:Button Margin="0,0,8,0" Click="OnCancel" Content="Annuler" />
+                <ui:Button Appearance="Primary" Click="OnStart" Content="Créer et ouvrir l'assistant" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

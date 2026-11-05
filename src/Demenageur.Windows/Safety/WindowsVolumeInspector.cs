@@ -25,7 +25,10 @@ public sealed unsafe class WindowsVolumeInspector : IVolumeInspector
         _fs = fs;
     }
 
-    public VolumeDetails Describe(string path)
+    public VolumeDetails Describe(string path) => Describe(path, includeBitLocker: true);
+
+    /// <summary>BitLocker (requête WMI lente) n'est interrogé que pour un disque cible, pas pour le bandeau des disques.</summary>
+    public VolumeDetails Describe(string path, bool includeBitLocker)
     {
         var volume = _fs.GetVolumeInfo(path);
         var letter = volume.RootPath.Length >= 2 && volume.RootPath[1] == ':' ? volume.RootPath[..2] : null;
@@ -47,7 +50,7 @@ public sealed unsafe class WindowsVolumeInspector : IVolumeInspector
             BusDescription = description,
             IsSubst = letter is not null && IsSubst(letter),
             IsSystemVolume = isSystem,
-            BitLockerRisk = letter is null || isSystem ? null : BitLockerRisk(letter),
+            BitLockerRisk = letter is null || isSystem || !includeBitLocker ? null : BitLockerRisk(letter),
         };
     }
 
@@ -60,7 +63,7 @@ public sealed unsafe class WindowsVolumeInspector : IVolumeInspector
             {
                 if (drive.IsReady && drive.DriveType is DriveType.Fixed or DriveType.Removable)
                 {
-                    result.Add(Describe(drive.RootDirectory.FullName));
+                    result.Add(Describe(drive.RootDirectory.FullName, includeBitLocker: false));
                 }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

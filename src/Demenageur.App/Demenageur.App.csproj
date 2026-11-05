@@ -11,6 +11,13 @@
     <StartupHookSupport>false</StartupHookSupport>
   </PropertyGroup>
 
+  <!-- Compilation « aperçu » : interface sans élévation, simulation uniquement (développement). -->
+  <PropertyGroup Condition="'$(DemenageurApercu)' == 'true'">
+    <DefineConstants>$(DefineConstants);APERCU</DefineConstants>
+    <ApplicationManifest>app.apercu.manifest</ApplicationManifest>
+    <AssemblyName>Demenageur-Apercu</AssemblyName>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

@@ -215,8 +215,22 @@ public sealed class SafetyRules
     private static bool IsSecurityVendor(string? text)
         => text is not null && SecurityVendors.Any(v => text.Contains(v, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>Forme réelle d'un chemin (noms 8.3 développés, préfixes \??\ et \\?\ retirés) quand il existe.</summary>
+    private readonly Dictionary<string, string> _realCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Forme réelle d'un chemin (noms 8.3 développés, préfixes \??\ et \\?\ retirés) quand il existe. Mise en cache.</summary>
     private string Real(string path)
+    {
+        if (_realCache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        var real = ComputeReal(path);
+        _realCache[path] = real;
+        return real;
+    }
+
+    private string ComputeReal(string path)
     {
         var cleaned = path.Trim().Trim('"');
         if (cleaned.StartsWith(@"\??\", StringComparison.Ordinal))
