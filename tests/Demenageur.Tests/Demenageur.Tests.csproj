@@ -11,6 +11,8 @@
     <IsTestProject>true</IsTestProject>
     <RootNamespace>Demenageur.Tests</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Les opérations testées sont courtes : pas besoin de propager le jeton d'annulation de xUnit partout. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
