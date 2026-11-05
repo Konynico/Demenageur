@@ -197,6 +197,7 @@ public sealed unsafe class Win32FileSystem : IFileSystem
                 {
                     var entry = new ReadOnlySpan<byte>(buffer + offset, bufferSize - offset);
                     var next = BinaryPrimitives.ReadUInt32LittleEndian(entry);
+                    var endOfFile = BinaryPrimitives.ReadInt64LittleEndian(entry[40..]);
                     var attributes = (FileAttributes)BinaryPrimitives.ReadUInt32LittleEndian(entry[56..]);
                     var nameLength = (int)BinaryPrimitives.ReadUInt32LittleEndian(entry[60..]);
                     var shortNameLength = entry[68];
@@ -208,7 +209,7 @@ public sealed unsafe class Win32FileSystem : IFileSystem
                         : null;
                     if (name is not ("." or ".."))
                     {
-                        result.Add(new DirectoryChild(name, fileId, attributes, shortName));
+                        result.Add(new DirectoryChild(name, fileId, attributes, shortName, endOfFile));
                     }
 
                     if (next == 0)

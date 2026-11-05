@@ -79,7 +79,7 @@ public sealed record FsEntryInfo
 }
 
 /// <summary>Entrée renvoyée par l'énumération d'un dossier.</summary>
-public sealed record DirectoryChild(string Name, ulong FileId64, FileAttributes Attributes, string? ShortName);
+public sealed record DirectoryChild(string Name, ulong FileId64, FileAttributes Attributes, string? ShortName, long Size = 0);
 
 /// <summary>Flux de données nommé (ADS) d'un fichier.</summary>
 public sealed record AlternateStream(string Name, long Size);
