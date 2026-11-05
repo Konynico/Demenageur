@@ -86,21 +86,21 @@ public sealed class MoveTransaction
             var originalShortName = FindShortName(fs, source);
 
             // ── 1) Destination vide, privée ──
-            Report("Création de la destination");
+            Report(MoveSteps.CreateDestination);
             facts.DestinationIntent = true;
             journal.Append(JournalSteps.DestinationIntent, "Création de la destination.");
             facts.DestinationId = fs.CreateDirectory(destination, SecurityDescriptorTools.CreatePrivateDirectoryDescriptor());
             journal.Append(JournalSteps.DestinationCreated, null, new Dictionary<string, string> { [JournalKeys.DestinationId] = facts.DestinationId.Value.ToString() });
 
             // ── 2) Verrou ──
-            Report("Vérification des processus");
+            Report(MoveSteps.CheckProcesses);
             cancellationToken.ThrowIfCancellationRequested();
             if (_context.Hooks.CheckBeforeLock(source) is { } refusal)
             {
                 throw new OperationAbortedException(refusal);
             }
 
-            Report("Verrouillage du dossier d'origine");
+            Report(MoveSteps.Lock);
             facts.SourceId = sourceInfo.Identity;
             journal.Append(JournalSteps.LockIntent, null, new Dictionary<string, string> { [JournalKeys.SourceId] = sourceInfo.Identity.ToString() });
             try
@@ -115,7 +115,7 @@ public sealed class MoveTransaction
             journal.Append(JournalSteps.Locked, $"Original verrouillé sous « {locked} ».");
 
             // ── 3) Inventaire et copie ──
-            Report("Inventaire des fichiers");
+            Report(MoveSteps.Inventory);
             var snapshot = new TreeScanner(fs).Scan(locked, ScanOptions.Full, cancellationToken: cancellationToken);
             if (snapshot.HasBlockingProblems)
             {
@@ -131,14 +131,14 @@ public sealed class MoveTransaction
                 [JournalKeys.Bytes] = manifest.TotalBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
             });
 
-            Report("Copie");
+            Report(MoveSteps.Copy);
             var copier = new TreeCopier(fs, retry);
-            copier.Copy(manifest, destination, facts.DestinationId.Value, p => Report("Copie", p), cancellationToken);
+            copier.Copy(manifest, destination, facts.DestinationId.Value, p => Report(MoveSteps.Copy, p), cancellationToken);
             journal.Append(JournalSteps.Copied);
 
             // ── 4) Vérification indépendante, puis permissions ──
-            Report("Vérification du contenu");
-            var verification = new TreeVerifier(fs).Verify(manifest, destination, new VerificationOptions(), p => Report("Vérification du contenu", p), cancellationToken);
+            Report(MoveSteps.VerifyContent);
+            var verification = new TreeVerifier(fs).Verify(manifest, destination, new VerificationOptions(), p => Report(MoveSteps.VerifyContent, p), cancellationToken);
             if (!verification.Success)
             {
                 throw new OperationAbortedException(verification.Summary);
@@ -148,7 +148,7 @@ public sealed class MoveTransaction
             fs.WriteNewFile(PathUtil.Join(operationDirectory, OperationStore.VerifiedManifestFileName), ManifestSerializer.Serialize(manifest));
             journal.Append(JournalSteps.ContentVerified, verification.Summary);
 
-            Report("Permissions");
+            Report(MoveSteps.Security);
             copier.ApplySecurity(manifest, destination, rootSecurity: null, cancellationToken);
             var securityCheck = new TreeVerifier(fs).Verify(manifest, destination, new VerificationOptions { CompareContent = false, CompareSecurity = true }, cancellationToken: cancellationToken);
             if (!securityCheck.Success)
@@ -160,7 +160,7 @@ public sealed class MoveTransaction
             journal.Append(JournalSteps.SecurityVerified);
 
             // ── 5) Jonction ──
-            Report("Création de la jonction");
+            Report(MoveSteps.CreateJunction);
             cancellationToken.ThrowIfCancellationRequested();
             journal.Append(JournalSteps.JunctionIntent);
             if (fs.GetEntry(source) is not null)
@@ -173,7 +173,7 @@ public sealed class MoveTransaction
             ApplyJunctionMetadata(fs, source, facts.JunctionId.Value, manifest.Root, originalShortName, warnings);
 
             // ── 6) Validation à travers la jonction ──
-            Report("Validation de la jonction");
+            Report(MoveSteps.ValidateJunction);
             if (!MoveProcedures.IsJunctionTo(fs, source, facts.JunctionId.Value, destination))
             {
                 throw new OperationAbortedException("La jonction relue ne pointe pas vers la copie.");
@@ -212,7 +212,7 @@ public sealed class MoveTransaction
         _context.Hooks.LeaveCriticalSection();
 
         // ── 7) Après le point de non-retour : suppression de l'original verrouillé ──
-        Report("Suppression de l'original");
+        Report(MoveSteps.DeleteOriginal);
         var outcome = MoveProcedures.FinishMove(fs, journal, facts, manifest!, retry, out var message);
         return new OperationResult(operationId, OperationKind.Move, outcome, message, warnings);
     }

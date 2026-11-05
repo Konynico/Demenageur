@@ -496,6 +496,12 @@ public sealed unsafe class Win32FileSystem : IFileSystem
         };
     }
 
+    public void ProbeRead(string filePath, FileIdentity expectedIdentity)
+    {
+        using var handle = Open(filePath, GENERIC_READ, FILE_SHARE_ALL, OPEN_EXISTING, 0, "Ouverture en lecture de");
+        VerifyIdentity(handle, expectedIdentity, filePath);
+    }
+
     public byte[]? ReadAllBytes(string path)
     {
         var handle = CreateFile(Ext(path), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);

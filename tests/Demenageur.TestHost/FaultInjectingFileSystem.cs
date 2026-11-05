@@ -115,6 +115,8 @@ public sealed class FaultInjectingFileSystem : IFileSystem
 
     public byte[]? ReadAllBytes(string path) => _inner.ReadAllBytes(path);
 
+    public void ProbeRead(string filePath, FileIdentity expectedIdentity) => _inner.ProbeRead(filePath, expectedIdentity);
+
     public bool TryFlushVolume(string path) => _inner.TryFlushVolume(path);
 
     // ───── Modifications ─────

@@ -157,6 +157,12 @@ public sealed class PathGuard : IFileSystem
         return _inner.GetVolumeInfo(path);
     }
 
+    public void ProbeRead(string filePath, FileIdentity expectedIdentity)
+    {
+        CheckRead(filePath);
+        _inner.ProbeRead(filePath, expectedIdentity);
+    }
+
     public byte[]? ReadAllBytes(string path)
     {
         CheckRead(path, followFinalLink: true);

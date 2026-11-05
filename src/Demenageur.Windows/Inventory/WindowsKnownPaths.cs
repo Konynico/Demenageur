@@ -48,7 +48,7 @@ public sealed class WindowsKnownPaths : IKnownPaths
 
     private static IEnumerable<string> PersonalFoldersOf(string profile)
     {
-        foreach (var name in new[] { "Desktop", "Bureau", "Documents", "Downloads", "Music", "Pictures", "Videos", "OneDrive", "Favorites", "Contacts", "Saved Games", "Searches", "Links", "AppData" })
+        foreach (var name in new[] { "Desktop", "Bureau", "Documents", "Downloads", "Music", "Pictures", "Videos", "OneDrive", "Favorites", "Contacts", "Saved Games", "Searches", "Links" })
         {
             yield return Path.Combine(profile, name);
         }

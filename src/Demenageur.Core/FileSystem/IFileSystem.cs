@@ -49,6 +49,9 @@ public interface IFileSystem
     /// <summary>Lit entièrement un petit fichier de données de l'app (journal, manifeste). Null si absent.</summary>
     byte[]? ReadAllBytes(string path);
 
+    /// <summary>Vérifie qu'un fichier peut être ouvert en lecture (sans le lire) ; lève une erreur sinon.</summary>
+    void ProbeRead(string filePath, FileIdentity expectedIdentity);
+
     // ───────────── Modifications ─────────────
 
     /// <summary>Crée un dossier ; échoue (<see cref="FsErrorKind.AlreadyExists"/>) s'il existe déjà. Descripteur facultatif posé à la création.</summary>
