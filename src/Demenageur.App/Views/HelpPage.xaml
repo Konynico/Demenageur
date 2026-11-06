@@ -67,6 +67,9 @@
             <TextBlock Style="{StaticResource Paragraph}" Text="4. Jonction, puis vérification à travers elle. C'est le point de non-retour : seulement ensuite, l'ancien dossier est supprimé, fichier par fichier, d'après l'inventaire." />
             <TextBlock Style="{StaticResource Paragraph}" Text="En cas d'erreur avant le point de non-retour (ou si tu annules), tout revient automatiquement à l'état initial. Après une coupure de courant, relance Déménageur : il termine ou annule l'opération interrompue. À aucun moment l'original n'est supprimé avant que la copie et la jonction soient vérifiées." />
 
+            <TextBlock Style="{StaticResource SectionTitle}" Text="« Le dossier est toujours là, rien n'a été supprimé ? »" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="C'est normal : à l'emplacement d'origine, l'Explorateur affiche la jonction comme un dossier (avec une petite flèche) et montre son contenu, qui est en réalité sur l'autre disque. Les « Propriétés » du dossier comptent aussi ces fichiers. Pour vérifier, regarde l'espace libre du disque d'origine (« Ce PC »), ou tape « dir /AL » dans une invite de commandes : le dossier apparaît comme &lt;JUNCTION&gt; avec sa cible." />
+
             <TextBlock Style="{StaticResource SectionTitle}" Text="Ce qui continue de fonctionner" />
             <TextBlock Style="{StaticResource Paragraph}" Text="Raccourcis, menu Démarrer, associations de fichiers, entrées du registre, services, tâches planifiées et désinstallation : tout utilise le chemin d'origine, qui reste valide grâce à la jonction. Déménageur ne modifie jamais le registre." />
 

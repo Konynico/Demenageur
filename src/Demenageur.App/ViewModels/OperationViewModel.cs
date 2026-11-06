@@ -349,6 +349,10 @@ public sealed partial class OperationViewModel : ObservableObject
                 }
             }
 
+            // Disque libéré par l'opération : celui d'origine pour un déplacement, celui de la copie pour une annulation.
+            var freedPath = IsMove ? _candidate!.Folder : _moved!.Destination;
+            var freeBefore = await Task.Run(() => FreeSpaceOf(freedPath));
+
             var progress = new Progress<OperationProgress>(OnProgress);
             OperationResult result;
             if (IsMove)
@@ -368,7 +372,20 @@ public sealed partial class OperationViewModel : ObservableObject
                 OperationOutcome.RolledBack => "Opération annulée : tout est revenu à l'état initial",
                 _ => "Intervention nécessaire",
             };
-            Finish(result.Succeeded, title, result.Message, result.Warnings);
+            var message = result.Message;
+            if (result.Succeeded)
+            {
+                var freeAfter = await Task.Run(() => FreeSpaceOf(freedPath));
+                message += SpaceReport(freedPath, freeBefore, freeAfter);
+                if (IsMove)
+                {
+                    message += $"\n\n« {_candidate!.Folder} » est maintenant une jonction (dossier marqué d'une petite flèche). "
+                               + "L'Explorateur l'affiche toujours avec son contenu, et ses « Propriétés » comptent encore la taille des fichiers : "
+                               + "c'est normal, la jonction montre les fichiers de la copie. L'original, lui, a bien été supprimé.";
+                }
+            }
+
+            Finish(result.Succeeded, title, message, result.Warnings);
         }
         catch (Exception ex)
         {
@@ -379,6 +396,35 @@ public sealed partial class OperationViewModel : ObservableObject
             _engine.OperationInProgress = false;
             CanCancel = false;
         }
+    }
+
+    /// <summary>Espace libre du volume qui contient le chemin (null si inconnu). Pas de requête BitLocker : rapide.</summary>
+    private long? FreeSpaceOf(string path)
+    {
+        try
+        {
+            var root = System.IO.Path.GetPathRoot(path);
+            return _engine.Volumes.ListVolumes()
+                .FirstOrDefault(v => string.Equals(v.Volume.RootPath, root, StringComparison.OrdinalIgnoreCase))
+                ?.Volume.FreeBytesAvailable;
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or Core.FileSystem.FileSystemException)
+        {
+            return null;
+        }
+    }
+
+    private static string SpaceReport(string path, long? before, long? after)
+    {
+        if (before is not { } b || after is not { } a)
+        {
+            return string.Empty;
+        }
+
+        var drive = System.IO.Path.GetPathRoot(path)?.TrimEnd('\\');
+        var delta = a - b;
+        var change = delta >= 0 ? $"+{MovePlanner.Bytes(delta)}" : $"−{MovePlanner.Bytes(-delta)}";
+        return $"\n\nEspace libre sur {drive} : {MovePlanner.Bytes(b)} avant → {MovePlanner.Bytes(a)} après ({change}).";
     }
 
     private void OnProgress(OperationProgress progress)
