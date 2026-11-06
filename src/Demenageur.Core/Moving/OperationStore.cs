@@ -23,6 +23,7 @@ public static class JournalKeys
     public const string Files = "files";
     public const string Bytes = "bytes";
     public const string Failures = "failures";
+    public const string RemoveJunction = "removeJunction";
 }
 
 /// <summary>Opération enregistrée (journal relu).</summary>
@@ -48,7 +49,12 @@ public sealed class StoredOperation
 
     public JournalRecord? Header { get; }
 
-    public OperationKind Kind => Header?.Get(JournalKeys.Kind) == nameof(OperationKind.Undo) ? OperationKind.Undo : OperationKind.Move;
+    public OperationKind Kind => Header?.Get(JournalKeys.Kind) switch
+    {
+        nameof(OperationKind.Undo) => OperationKind.Undo,
+        nameof(OperationKind.Retire) => OperationKind.Retire,
+        _ => OperationKind.Move,
+    };
 
     public string SoftwareName => Header?.Get(JournalKeys.Software) ?? "(inconnu)";
 

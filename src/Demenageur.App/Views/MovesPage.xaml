@@ -75,6 +75,12 @@
         </Grid>
 
         <StackPanel Grid.Row="3" Margin="0,8,0,0" HorizontalAlignment="Right" Orientation="Horizontal">
+            <ui:Button Margin="0,0,8,0" Command="{Binding RetireCommand}" Content="Nettoyer la copie…"
+                       ToolTip="Logiciel désinstallé, ou recréé à sa place d'origine par une mise à jour : supprimer la copie restante sur le disque cible">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Delete24" />
+                </ui:Button.Icon>
+            </ui:Button>
             <ui:Button Margin="0,0,8,0" Command="{Binding CheckIntegrityCommand}" Content="Vérifier l'intégrité">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="ShieldCheckmark24" />

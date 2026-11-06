@@ -34,7 +34,7 @@ public sealed partial class MovedItemViewModel : ObservableObject
     public RuleLevel Level => Moved.Health switch
     {
         MoveHealth.Ok => RuleLevel.Info,
-        MoveHealth.CleanupPending => RuleLevel.Warning,
+        MoveHealth.CleanupPending or MoveHealth.SourceMissing or MoveHealth.ReplacedByFolder or MoveHealth.DestinationEmpty => RuleLevel.Warning,
         _ => RuleLevel.Block,
     };
 
@@ -43,9 +43,10 @@ public sealed partial class MovedItemViewModel : ObservableObject
         MoveHealth.Ok => "En bonne santé",
         MoveHealth.CleanupPending => "Nettoyage en attente",
         MoveHealth.JunctionBroken => "Jonction cassée",
-        MoveHealth.ReplacedByFolder => "Remplacé par un dossier",
+        MoveHealth.ReplacedByFolder => "Remplacé par un dossier (mise à jour ?)",
         MoveHealth.DestinationMissing => "Copie introuvable",
         MoveHealth.DestinationEmpty => "Copie vide",
+        MoveHealth.SourceMissing => "Désinstallé",
         _ => Moved.Health.ToString(),
     };
 
@@ -74,7 +75,7 @@ public sealed partial class MovesViewModel : ObservableObject
     public ObservableCollection<string> Attention { get; } = [];
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(UndoCommand), nameof(CheckIntegrityCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UndoCommand), nameof(CheckIntegrityCommand), nameof(RetireCommand))]
     private MovedItemViewModel? selected;
 
     [ObservableProperty]
@@ -121,6 +122,25 @@ public sealed partial class MovesViewModel : ObservableObject
         }
 
         if (_windows.ShowUndoWizard(Selected.Moved))
+        {
+            await LoadAsync();
+            if (RefreshDrivesRequested is not null)
+            {
+                await RefreshDrivesRequested();
+            }
+        }
+    }
+
+    /// <summary>Nettoyage de la copie restante (logiciel désinstallé ou remplacé). La simulation dit si c'est permis.</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private async Task RetireAsync()
+    {
+        if (Selected is null)
+        {
+            return;
+        }
+
+        if (_windows.ShowRetireWizard(Selected.Moved))
         {
             await LoadAsync();
             if (RefreshDrivesRequested is not null)
@@ -186,7 +206,12 @@ public sealed partial class JournalViewModel : ObservableObject
         Operations.Clear();
         foreach (var operation in operations.OrderByDescending(o => o.Id, StringComparer.Ordinal))
         {
-            var kind = operation.Kind == OperationKind.Move ? "Déplacement" : "Annulation";
+            var kind = operation.Kind switch
+            {
+                OperationKind.Move => "Déplacement",
+                OperationKind.Undo => "Annulation",
+                _ => "Nettoyage",
+            };
             var state = !operation.Trusted ? "journal non fiable (ignoré)"
                 : operation.Journal.Corrupt ? "journal corrompu"
                 : operation.LastStep switch
@@ -294,6 +319,8 @@ public interface IWindowService
     bool ShowMoveWizard(MoveCandidate candidate, IReadOnlyList<InstalledSoftware> catalog);
 
     bool ShowUndoWizard(MovedSoftware moved);
+
+    bool ShowRetireWizard(MovedSoftware moved);
 
     string? PickFolder(string title);
 

@@ -54,6 +54,12 @@
         <ScrollViewer Grid.Row="2" Margin="24,0" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsSimulationStep, Converter={StaticResource BoolToVisibility}}">
             <StackPanel>
                 <ui:InfoBar Title="Simulation : rien n'a été modifié" IsClosable="False" IsOpen="True" Message="{Binding Summary}" Severity="Informational" />
+                <ui:Button Margin="0,8,0,0" Command="{Binding OpenCopyCommand}" Content="Ouvrir la copie pour vérifier son contenu"
+                           Visibility="{Binding IsRetire, Converter={StaticResource BoolToVisibility}}">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="FolderOpen24" />
+                    </ui:Button.Icon>
+                </ui:Button>
 
                 <TextBlock Style="{StaticResource SectionTitle}" Text="Vérifications" />
                 <ItemsControl ItemTemplate="{StaticResource VerdictTemplate}" ItemsSource="{Binding Verdicts}" />

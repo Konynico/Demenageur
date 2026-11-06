@@ -54,9 +54,12 @@ public sealed class RecoveryService
         _context.Hooks.EnterCriticalSection();
         try
         {
-            return operation.Kind == OperationKind.Move
-                ? RecoverMove(operation, fs, journal, cancellationToken)
-                : RecoverUndo(operation, fs, journal);
+            return operation.Kind switch
+            {
+                OperationKind.Move => RecoverMove(operation, fs, journal, cancellationToken),
+                OperationKind.Undo => RecoverUndo(operation, fs, journal),
+                _ => RecoverRetire(operation, fs, journal, cancellationToken),
+            };
         }
         catch (Exception ex) when (ex is FileSystemException or IOException or UnauthorizedAccessException or FormatException)
         {
@@ -133,6 +136,25 @@ public sealed class RecoveryService
         }
 
         var rollback = UndoProcedures.Rollback(fs, journal, facts, _context.Retry);
+        return Result(operation, rollback.Success ? OperationOutcome.RolledBack : OperationOutcome.NeedsAttention, rollback.Message);
+    }
+
+    private OperationResult RecoverRetire(StoredOperation operation, IFileSystem fs, OperationJournal journal, CancellationToken cancellationToken)
+    {
+        var destinationId = operation.Header?.Get(JournalKeys.DestinationId) is { } text
+            ? FileIdentity.Parse(text)
+            : throw new FormatException("Identité de la copie absente du journal.");
+        var facts = new RetireFacts(operation.SourcePath!, operation.DestinationPath!, operation.LockedPath!, destinationId,
+            operation.Header?.Get(JournalKeys.RemoveJunction) == "true");
+
+        if (operation.IsCommitted)
+        {
+            var outcome = RetireProcedures.Finish(fs, journal, facts, _context.Retry, out var message, cancellationToken);
+            return Result(operation, outcome, message);
+        }
+
+        var junctionWasActive = operation.Journal.LastOf(JournalSteps.Locked)?.Get(JournalKeys.RemoveJunction) == "true";
+        var rollback = RetireProcedures.Rollback(fs, journal, facts, junctionWasActive, _context.Retry);
         return Result(operation, rollback.Success ? OperationOutcome.RolledBack : OperationOutcome.NeedsAttention, rollback.Message);
     }
 

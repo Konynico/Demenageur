@@ -171,6 +171,26 @@ public sealed class Engine
         return result;
     }
 
+    /// <summary>Entrées de désinstallation qui désignent encore l'emplacement d'origine (logiciel toujours installé).</summary>
+    public IReadOnlyList<UninstallEntry> RegistrationsOf(MovedSoftware moved)
+        => UninstallReferences.PointingInto(Catalog.ReadEntries(), moved.Source);
+
+    /// <summary>Simulation du nettoyage d'un déplacement devenu sans objet (lecture seule).</summary>
+    public RetirePlan PlanRetire(MovedSoftware moved) => new RetirePlanner(Raw, Processes).Plan(moved, RegistrationsOf(moved));
+
+    /// <summary>Nettoyage d'un déplacement devenu sans objet : suppression de la copie restante.</summary>
+    public OperationResult ExecuteRetire(RetirePlan plan, Action<OperationProgress> progress, CancellationToken cancellationToken)
+    {
+        EnsureRealOperationsAllowed();
+        var moved = plan.Moved;
+        Log.Information("Nettoyage du déplacement de {Software} : suppression de {Destination}", moved.SoftwareName, moved.Destination);
+        var hooks = new WindowsMoveHooks(new CriticalSectionOptions(), Processes, Data.DataRoot);
+        var result = new RetireTransaction(Context(hooks)).Execute(moved.ToRetireRequest(plan.RemoveActiveJunction), progress, cancellationToken);
+        LogResult(result);
+        UpdateReadme(Path.GetDirectoryName(moved.Destination)!);
+        return result;
+    }
+
     /// <summary>Reprise des opérations interrompues (au démarrage).</summary>
     public IReadOnlyList<(StoredOperation Operation, OperationResult Result)> RecoverPending()
     {

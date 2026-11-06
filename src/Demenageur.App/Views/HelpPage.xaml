@@ -80,6 +80,12 @@
             <TextBlock Style="{StaticResource Paragraph}" Text="• Logiciels qui cherchent un dossier voisin par un chemin relatif (..\), DRM ou anti-triche qui vérifient leur emplacement, applications UIAccess ou règles AppLocker exigeant Program Files : ils peuvent refuser de fonctionner depuis un autre disque." />
             <TextBlock Style="{StaticResource Paragraph}" Text="• Restauration du système et mises à niveau majeures de Windows : annule d'abord les déplacements. Un point de restauration ne sauvegarde pas les fichiers des logiciels." />
 
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Désinstaller ou mettre à jour un logiciel déplacé" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Mise à jour qui écrit dans le dossier du logiciel (le cas le plus courant) : les nouveaux fichiers passent par la jonction et arrivent directement sur l'autre disque. Rien à faire." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Désinstallation : le désinstalleur supprime les fichiers qu'il connaît (à travers la jonction, donc sur l'autre disque), puis souvent la jonction elle-même. Ce qu'il oublie (journaux, extensions, caches) reste dans la copie. « Mes déplacements » l'indique « Désinstallé » : utilise « Nettoyer la copie… » pour supprimer ces restes." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Mise à jour ou réinstallation qui supprime le dossier puis le recrée : le logiciel fonctionne de nouveau depuis son emplacement d'origine et l'ancienne copie est orpheline (« Remplacé par un dossier »). Utilise « Nettoyer la copie… », puis redéplace le logiciel si tu veux." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Le nettoyage ne touche jamais l'emplacement d'origine (sauf une jonction laissée par un désinstalleur, avec ton accord explicite), refuse tant que Windows liste encore le logiciel comme installé derrière sa jonction, et ne supprime que la copie créée par le déplacement. Déménageur signale ces situations au démarrage mais ne nettoie jamais rien tout seul." />
+
             <TextBlock Style="{StaticResource SectionTitle}" Text="Annuler un déplacement" />
             <TextBlock Style="{StaticResource Paragraph}" Text="Dans « Mes déplacements », choisis le logiciel puis « Annuler le déplacement… ». Déménageur recopie l'état ACTUEL du logiciel (mises à jour comprises) à son emplacement d'origine, vérifie, remplace la jonction, puis supprime la copie." />
 

@@ -87,6 +87,41 @@ public sealed class MoveScenario : IDisposable
         return new UndoTransaction(Context(fs)).Execute(request);
     }
 
+    /// <summary>Déplacements en vigueur (lecture du journal et bilan de santé).</summary>
+    public IReadOnlyList<MovedSoftware> Moves() => MovedSoftwareRegistry.Load(Store(), Sandbox.RawFs);
+
+    public OperationResult Retire(string moveOperationId, bool removeActiveJunction = false)
+    {
+        var moved = Moves().Single(m => m.Move.Id == moveOperationId);
+        return new RetireTransaction(Context()).Execute(moved.ToRetireRequest(removeActiveJunction));
+    }
+
+    /// <summary>
+    /// Imite un désinstalleur : il supprime une partie des fichiers À TRAVERS la jonction, puis la jonction elle-même
+    /// (c'est ce qu'a fait le désinstalleur d'Overwolf). Le reste de la copie devient orphelin.
+    /// </summary>
+    public void SimulateUninstall(bool removeJunction = true)
+    {
+        foreach (var file in new[] { @"bin\app.exe", @"bin\core.dll" }.Select(f => Path.Combine(Source, f)))
+        {
+            File.SetAttributes(file, FileAttributes.Normal);
+            File.Delete(file);
+        }
+
+        if (removeJunction)
+        {
+            Directory.Delete(Source, recursive: false); // supprime le lien seul
+        }
+    }
+
+    /// <summary>Imite une mise à jour qui supprime la jonction puis recrée un vrai dossier à l'emplacement d'origine.</summary>
+    public void SimulateUpdateRecreatingFolder()
+    {
+        Directory.Delete(Source, recursive: false);
+        Directory.CreateDirectory(Source);
+        File.WriteAllText(Path.Combine(Source, "nouvelle-version.txt"), "v2");
+    }
+
     /// <summary>Reprise de toutes les opérations en attente, sans panne.</summary>
     public IReadOnlyList<OperationResult> RecoverAll()
     {

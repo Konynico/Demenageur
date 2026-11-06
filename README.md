@@ -41,6 +41,21 @@ Toute erreur avant le point de non-retour ramène automatiquement à l'état ini
 courant, l'opération est reprise au lancement suivant. « Mes déplacements » permet d'annuler un déplacement : la copie
 est rapatriée à l'emplacement d'origine, avec les mêmes vérifications.
 
+**Désinstallation et mises à jour.** Un désinstalleur supprime les fichiers qu'il connaît à travers la jonction, puis
+souvent la jonction elle-même. Certaines mises à jour, elles, recréent un vrai dossier à l'origine. Dans les deux cas,
+une copie orpheline reste sur le disque cible. Elle est signalée au démarrage et dans « Mes déplacements »
+(« Désinstallé » ou « Remplacé par un dossier »).
+
+« Nettoyer la copie… » la supprime. C'est une opération journalisée et reprise après un crash, comme les autres :
+1. simulation ;
+2. contrôle d'identité ;
+3. verrou ;
+4. suppression élément par élément, sans suivre les liens.
+
+Ce qui se trouve à l'emplacement d'origine n'est jamais touché, avec une seule exception : la jonction laissée en place
+par un désinstalleur. Elle n'est supprimée qu'après saisie du nom du logiciel, et seulement si plus aucune entrée de
+désinstallation ne désigne ce dossier.
+
 ## Structure
 
 | Projet | Rôle |

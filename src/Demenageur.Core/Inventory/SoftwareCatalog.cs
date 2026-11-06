@@ -16,6 +16,9 @@ public sealed class SoftwareCatalog
         _resolver = resolver;
     }
 
+    /// <summary>Entrées brutes (lecture seule du registre).</summary>
+    public IReadOnlyList<UninstallEntry> ReadEntries() => _source.ReadAll();
+
     public IReadOnlyList<InstalledSoftware> Load()
     {
         var resolved = _source.ReadAll()

@@ -30,6 +30,11 @@ public sealed class SystemServicesTests
     public void Only_one_instance_can_run()
     {
         using var first = SingleInstance.Acquire();
+        if (!first.IsFirstInstance)
+        {
+            Assert.Skip("Déménageur est ouvert sur ce poste (il détient le verrou global) : test impossible ici.");
+        }
+
         var secondIsFirst = true;
         var thread = new Thread(() =>
         {

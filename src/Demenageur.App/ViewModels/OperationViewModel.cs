@@ -89,20 +89,24 @@ public sealed partial class OperationViewModel : ObservableObject
         step = WizardStep.Destination;
     }
 
-    /// <summary>Annulation d'un déplacement.</summary>
-    public OperationViewModel(Engine engine, MovedSoftware moved)
+    /// <summary>Annulation d'un déplacement, ou (<paramref name="retire"/>) nettoyage de sa copie restante.</summary>
+    public OperationViewModel(Engine engine, MovedSoftware moved, bool retire = false)
     {
         _engine = engine;
         _moved = moved;
         _catalog = [];
         IsMove = false;
-        Title = $"Annuler le déplacement de « {moved.SoftwareName} »";
-        SourceText = $"{moved.Destination}  →  {moved.Source}";
+        IsRetire = retire;
+        Title = retire ? $"Nettoyer la copie de « {moved.SoftwareName} »" : $"Annuler le déplacement de « {moved.SoftwareName} »";
+        SourceText = retire ? $"Copie à supprimer : {moved.Destination}" : $"{moved.Destination}  →  {moved.Source}";
         RestorePointAvailability = engine.RestorePoints.GetAvailability();
         step = WizardStep.Simulation;
     }
 
     public bool IsMove { get; }
+
+    /// <summary>Nettoyage d'un déplacement devenu sans objet (logiciel désinstallé, ou remplacé par une mise à jour).</summary>
+    public bool IsRetire { get; }
 
     public string Title { get; }
 
@@ -124,7 +128,7 @@ public sealed partial class OperationViewModel : ObservableObject
 
     public bool RestorePointImpossible => !RestorePointPossible;
 
-    public string ExecuteLabel => IsMove ? "Déplacer maintenant" : "Annuler le déplacement maintenant";
+    public string ExecuteLabel => IsMove ? "Déplacer maintenant" : IsRetire ? "Supprimer la copie" : "Annuler le déplacement maintenant";
 
     public bool SimulationOnly => _engine.Settings.SimulationOnly;
 
@@ -227,12 +231,16 @@ public sealed partial class OperationViewModel : ObservableObject
 
     private MovePlan? _plan;
     private UndoPlan? _undoPlan;
+    private RetirePlan? _retirePlan;
+
+    [RelayCommand]
+    private void OpenCopy() => Demenageur.Windows.AppData.ShellActions.OpenFolder(_moved?.Destination ?? string.Empty);
 
     [RelayCommand]
     public async Task SimulateAsync()
     {
         IsBusy = true;
-        BusyText = IsMove ? "Simulation : analyse complète du dossier, sans rien modifier…" : "Vérifications avant l'annulation…";
+        BusyText = IsMove ? "Simulation : analyse complète du dossier, sans rien modifier…" : IsRetire ? "Vérifications avant le nettoyage…" : "Vérifications avant l'annulation…";
         Verdicts.Clear();
         Steps.Clear();
         try
@@ -248,6 +256,14 @@ public sealed partial class OperationViewModel : ObservableObject
                 NeedsStrongConfirmation = _plan.RequiresStrongConfirmation;
                 OfferExplorerOption = _plan.ExplorerIsOnlyBlocker || StopExplorer;
                 OfferServicesOption = _plan.RunningServices.Count > 0 || StopServices;
+            }
+            else if (IsRetire)
+            {
+                _retirePlan = await Task.Run(() => _engine.PlanRetire(_moved!));
+                Fill(_retirePlan.Verdicts, _retirePlan.Steps);
+                Summary = $"Copie : {_moved!.Destination}\n{_retirePlan.CopyFiles} fichier(s), {MovePlanner.Bytes(_retirePlan.CopyBytes)} à supprimer.";
+                PlanAllowsExecution = _retirePlan.CanExecute;
+                NeedsStrongConfirmation = _retirePlan.RequiresStrongConfirmation;
             }
             else
             {
@@ -350,6 +366,7 @@ public sealed partial class OperationViewModel : ObservableObject
             }
 
             // Disque libéré par l'opération : celui d'origine pour un déplacement, celui de la copie pour une annulation.
+            // (nettoyage : celui de la copie)
             var freedPath = IsMove ? _candidate!.Folder : _moved!.Destination;
             var freeBefore = await Task.Run(() => FreeSpaceOf(freedPath));
 
@@ -359,6 +376,10 @@ public sealed partial class OperationViewModel : ObservableObject
             {
                 result = await Task.Run(() => _engine.ExecuteMove(_plan!, p => ((IProgress<OperationProgress>)progress).Report(p), _cancellation.Token));
             }
+            else if (IsRetire)
+            {
+                result = await Task.Run(() => _engine.ExecuteRetire(_retirePlan!, p => ((IProgress<OperationProgress>)progress).Report(p), _cancellation.Token));
+            }
             else
             {
                 result = await Task.Run(() => _engine.ExecuteUndo(_undoPlan!, p => ((IProgress<OperationProgress>)progress).Report(p), _cancellation.Token));
@@ -367,9 +388,9 @@ public sealed partial class OperationViewModel : ObservableObject
             Changed = true;
             var title = result.Outcome switch
             {
-                OperationOutcome.Completed => IsMove ? "Déplacement terminé et vérifié" : "Annulation terminée",
-                OperationOutcome.CompletedWithPendingCleanup => IsMove ? "Déplacement terminé (nettoyage en attente)" : "Annulation terminée (nettoyage en attente)",
-                OperationOutcome.RolledBack => "Opération annulée : tout est revenu à l'état initial",
+                OperationOutcome.Completed => IsMove ? "Déplacement terminé et vérifié" : IsRetire ? "Copie supprimée" : "Annulation terminée",
+                OperationOutcome.CompletedWithPendingCleanup => IsMove ? "Déplacement terminé (nettoyage en attente)" : IsRetire ? "Copie en partie supprimée (suite au prochain lancement)" : "Annulation terminée (nettoyage en attente)",
+                OperationOutcome.RolledBack => IsRetire ? "Nettoyage abandonné : rien n'a été supprimé" : "Opération annulée : tout est revenu à l'état initial",
                 _ => "Intervention nécessaire",
             };
             var message = result.Message;

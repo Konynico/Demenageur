@@ -29,9 +29,12 @@ public sealed class WindowService : IWindowService
     public bool ShowMoveWizard(MoveCandidate candidate, IReadOnlyList<InstalledSoftware> catalog)
         => ShowWizard(new OperationViewModel(_engine, candidate, catalog, Drives));
 
-    public bool ShowUndoWizard(MovedSoftware moved)
+    public bool ShowUndoWizard(MovedSoftware moved) => ShowSimulatedWizard(new OperationViewModel(_engine, moved));
+
+    public bool ShowRetireWizard(MovedSoftware moved) => ShowSimulatedWizard(new OperationViewModel(_engine, moved, retire: true));
+
+    private static bool ShowSimulatedWizard(OperationViewModel viewModel)
     {
-        var viewModel = new OperationViewModel(_engine, moved);
         var window = new OperationWindow(viewModel) { Owner = Owner };
         window.Loaded += async (_, _) => await viewModel.SimulateAsync();
         window.ShowDialog();

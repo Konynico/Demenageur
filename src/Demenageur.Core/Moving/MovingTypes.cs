@@ -26,10 +26,37 @@ public sealed record UndoRequest
     public byte[]? OriginalRootSecurity { get; init; }
 }
 
+/// <summary>
+/// Nettoyage d'un déplacement devenu sans objet (logiciel désinstallé, ou dossier recréé à l'origine par une mise à
+/// jour) : la copie restante sur le disque cible est supprimée et le déplacement retiré de la liste.
+/// </summary>
+public sealed record RetireRequest
+{
+    public required string MoveOperationId { get; init; }
+
+    public required string SoftwareName { get; init; }
+
+    /// <summary>Emplacement d'origine (absent, vrai dossier, ou encore la jonction).</summary>
+    public required string SourcePath { get; init; }
+
+    /// <summary>Copie à supprimer.</summary>
+    public required string DestinationPath { get; init; }
+
+    /// <summary>Identité du dossier de destination créé par le déplacement : rien d'autre n'est supprimé.</summary>
+    public required FileIdentity DestinationIdentity { get; init; }
+
+    /// <summary>
+    /// Si la jonction vers la copie est encore en place : la supprimer aussi (le logiciel ne fonctionnera plus).
+    /// Sans cette autorisation explicite, le nettoyage est refusé dans ce cas.
+    /// </summary>
+    public bool RemoveActiveJunction { get; init; }
+}
+
 public enum OperationKind
 {
     Move,
     Undo,
+    Retire,
 }
 
 public enum OperationOutcome
@@ -145,6 +172,10 @@ public static class OperationIds
     /// <summary>Dossier verrouillé (renommé) dans le même parent : <c>Nom.dmv-old-xxxxxxxx</c>.</summary>
     public static string LockedPath(string path, string operationId)
         => PathUtil.Join(PathUtil.GetParent(path)!, PathUtil.GetName(path) + ".dmv-old-" + ShortId(operationId));
+
+    /// <summary>Copie mise de côté avant suppression (nettoyage) : <c>Nom.dmv-suppr-xxxxxxxx</c>.</summary>
+    public static string RetiringPath(string path, string operationId)
+        => PathUtil.Join(PathUtil.GetParent(path)!, PathUtil.GetName(path) + ".dmv-suppr-" + ShortId(operationId));
 
     /// <summary>Copie de retour (annulation) dans le même parent : <c>Nom.dmv-retour-xxxxxxxx</c>.</summary>
     public static string RestorePath(string path, string operationId)

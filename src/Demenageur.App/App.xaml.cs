@@ -117,6 +117,22 @@ public partial class App : Application
                 {
                     viewModel.StartupMessages.Add($"{operation.SoftwareName} : {Describe(result)}");
                 }
+
+                // Déplacements devenus sans objet (désinstallation, mise à jour qui a recréé le dossier) : signalés, jamais nettoyés d'office.
+                try
+                {
+                    foreach (var moved in await Task.Run(engine.LoadMoves))
+                    {
+                        if (moved.Health is MoveHealth.SourceMissing or MoveHealth.ReplacedByFolder)
+                        {
+                            viewModel.StartupMessages.Add($"{moved.SoftwareName} : {moved.HealthMessage} Voir « Mes déplacements » → « Nettoyer la copie… ».");
+                        }
+                    }
+                }
+                catch (Exception ex) when (ex is Core.FileSystem.FileSystemException or System.IO.IOException or UnauthorizedAccessException)
+                {
+                    Log.Warning(ex, "Bilan des déplacements impossible au démarrage");
+                }
             }
 
             var window = _host.Services.GetRequiredService<MainWindow>();
