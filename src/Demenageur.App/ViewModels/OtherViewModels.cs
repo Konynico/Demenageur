@@ -151,7 +151,7 @@ public sealed partial class MovesViewModel : ObservableObject, INavigationAware
 
             Selected = Items.FirstOrDefault(i => i.Moved.Move.Id == previousId);
             UpdateSpaceSummary();
-            _ = ComputeSizesAsync();
+            ComputeSizesAsync().LogFailures("tailles des déplacements");
 
             Attention.Clear();
             foreach (var operation in pending.Where(o => !o.IsCommitted || o.LastStep == JournalSteps.NeedsAttention))

@@ -267,7 +267,7 @@ public sealed partial class SoftwareListViewModel : ObservableObject, INavigatio
             IsLoading = false;
         }
 
-        _ = ComputeSizesAsync();
+        ComputeSizesAsync().LogFailures("tailles des logiciels");
     }
 
     /// <summary>Dernier inventaire chargé (utilisé par la simulation pour repérer les logiciels imbriqués).</summary>

@@ -81,8 +81,8 @@ public sealed class WindowService : IWindowService
         };
         if (ShowWizard(viewModel))
         {
-            _ = _services.GetRequiredService<MovesViewModel>().LoadAsync();
-            _ = _services.GetRequiredService<MainViewModel>().RefreshDrivesAsync();
+            _services.GetRequiredService<MovesViewModel>().LoadAsync().LogFailures("mes déplacements");
+            _services.GetRequiredService<MainViewModel>().RefreshDrivesAsync().LogFailures("bandeau des disques");
         }
     }
 }

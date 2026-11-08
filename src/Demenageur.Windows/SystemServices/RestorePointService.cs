@@ -67,13 +67,21 @@ public sealed class RestorePointService : IRestorePointService
 
         var before = LatestSequence();
         var info = new RestorePointInfo { EventType = BeginSystemChange, RestorePointType = ModifySettings, Description = Truncate(description) };
-        if (!SRSetRestorePointW(ref info, out var status))
+        try
         {
-            return new RestorePointResult(false, $"Windows a refusé de créer le point de restauration (code {status.Status}).");
-        }
+            if (!SRSetRestorePointW(ref info, out var status))
+            {
+                return new RestorePointResult(false, $"Windows a refusé de créer le point de restauration (code {status.Status}).");
+            }
 
-        var end = new RestorePointInfo { EventType = EndSystemChange, RestorePointType = ModifySettings, SequenceNumber = status.SequenceNumber };
-        SRSetRestorePointW(ref end, out _);
+            var end = new RestorePointInfo { EventType = EndSystemChange, RestorePointType = ModifySettings, SequenceNumber = status.SequenceNumber };
+            SRSetRestorePointW(ref end, out _);
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        {
+            // srclient.dll absent (Windows Server, certaines éditions) : pas de point de restauration, l'opération continue.
+            return new RestorePointResult(false, "Les points de restauration ne sont pas disponibles sur cette édition de Windows.");
+        }
 
         var after = LatestSequence();
         if (after is not null && before is not null && after <= before)
@@ -87,7 +95,7 @@ public sealed class RestorePointService : IRestorePointService
 
     public void OpenSystemProtectionSettings()
     {
-        Process.Start(new ProcessStartInfo("SystemPropertiesProtection.exe") { UseShellExecute = true })?.Dispose();
+        Process.Start(new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "SystemPropertiesProtection.exe")) { UseShellExecute = true })?.Dispose();
     }
 
     private static long? LatestSequence()

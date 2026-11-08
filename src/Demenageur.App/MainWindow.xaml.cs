@@ -20,19 +20,19 @@ public partial class MainWindow : FluentWindow
         SystemThemeWatcher.Watch(this);
         Loaded += (_, _) =>
         {
-            _ = viewModel.RefreshDrivesAsync();
+            viewModel.RefreshDrivesAsync().LogFailures("bandeau des disques");
             foreach (var page in viewModel.Pages)
             {
                 switch (page.Page)
                 {
                     case SoftwareListViewModel software:
-                        _ = software.LoadAsync();
+                        software.LoadAsync().LogFailures("liste des logiciels");
                         break;
                     case MovesViewModel moves:
-                        _ = moves.LoadAsync();
+                        moves.LoadAsync().LogFailures("mes déplacements");
                         break;
                     case JournalViewModel journal:
-                        _ = journal.LoadAsync();
+                        journal.LoadAsync().LogFailures("journal");
                         break;
                 }
             }

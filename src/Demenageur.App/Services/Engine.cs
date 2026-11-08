@@ -188,6 +188,13 @@ public sealed class Engine
     {
         EnsureRealOperationsAllowed();
         Log.Information("Déplacement de {Software} : {Source} → {Destination}", plan.Request.Candidate.DisplayName, plan.Source, plan.Destination);
+        // Revérifié au dernier moment : entre la simulation et le clic, le dossier racine a pu apparaître avec des droits trop larges.
+        if (DestinationContainer.Check(Raw, plan.Request.DestinationRoot) is { } unsafeContainer)
+        {
+            Log.Warning("Déplacement refusé : {Reason}", unsafeContainer.Explanation);
+            return new OperationResult(string.Empty, OperationKind.Move, OperationOutcome.RolledBack, unsafeContainer.Explanation + " Rien n'a été modifié.", []);
+        }
+
         DestinationContainer.EnsureCreated(Raw, ScopeFactory, plan.Request.DestinationRoot);
         var hooks = new WindowsMoveHooks(new CriticalSectionOptions
         {

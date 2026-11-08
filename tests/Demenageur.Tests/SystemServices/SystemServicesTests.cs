@@ -35,16 +35,16 @@ public sealed class SystemServicesTests
             Assert.Skip("Déménageur est ouvert sur ce poste (il détient le verrou global) : test impossible ici.");
         }
 
-        var secondIsFirst = true;
+        var secondState = InstanceState.First;
         var thread = new Thread(() =>
         {
             using var second = SingleInstance.Acquire();
-            secondIsFirst = second.IsFirstInstance;
+            secondState = second.State;
         });
         thread.Start();
         thread.Join();
         Assert.True(first.IsFirstInstance);
-        Assert.False(secondIsFirst);
+        Assert.Equal(InstanceState.AlreadyRunning, secondState);
     }
 
     [Fact]

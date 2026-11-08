@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Principal;
 using System.Windows;
 using System.Windows.Threading;
@@ -19,7 +20,32 @@ public partial class App : Application
 
     private async void OnStartup(object sender, StartupEventArgs e)
     {
-        _instance = SingleInstance.Acquire();
+        // Exceptions des tâches de fond : journalisées au lieu de disparaître (ou de fermer l'app sans trace).
+        AppDomain.CurrentDomain.UnhandledException += (_, args) => Log.Fatal(args.ExceptionObject as Exception, "Exception non gérée");
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Log.Error(args.Exception, "Exception non observée dans une tâche de fond");
+            args.SetObserved();
+        };
+
+        try
+        {
+            _instance = SingleInstance.Acquire();
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or WaitHandleCannotBeOpenedException or IOException)
+        {
+            MessageBox.Show($"{SingleInstance.BlockedMessage}\n\n({ex.Message})", "Déménageur", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+            return;
+        }
+
+        if (_instance.State == InstanceState.Blocked)
+        {
+            MessageBox.Show(SingleInstance.BlockedMessage, "Déménageur", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+            return;
+        }
+
         if (!_instance.IsFirstInstance)
         {
             if (AppHost.IsPreview && e.Args.FirstOrDefault() == "--capture")
