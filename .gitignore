@@ -483,4 +483,5 @@ $RECYCLE.BIN/
 
 # Déménageur
 artifacts/
-
+# Profil de publication de l'app : nécessaire pour publier depuis un clone du dépôt (aucun secret dedans).
+!src/Demenageur.App/Properties/PublishProfiles/win-x64.pubxml

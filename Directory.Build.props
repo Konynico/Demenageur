@@ -12,6 +12,22 @@
     <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
     <!-- Une API interdite (RS0030) est une erreur de compilation, pas un simple avertissement. -->
     <WarningsAsErrors>$(WarningsAsErrors);RS0030;RS0031;RS0035</WarningsAsErrors>
+
+    <!-- Version affichée dans les propriétés de l'exe, l'aide et les logs. -->
+    <Version>1.0.0</Version>
+
+    <!-- Dépendances : versions figées (packages.lock.json) et audit de TOUTES les dépendances, transitives comprises.
+         Une vulnérabilité connue de gravité moyenne ou plus fait échouer la compilation. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1902;NU1903;NU1904</WarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Release : symboles intégrés aux DLL (aucun .pdb livré) et chemins sources neutres (pas de E:\Projets\… dans le binaire). -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
+    <PathMap>$(MSBuildThisFileDirectory)=/Demenageur/</PathMap>
   </PropertyGroup>
 
   <ItemGroup>
