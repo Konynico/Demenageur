@@ -22,6 +22,13 @@ public partial class App : Application
         _instance = SingleInstance.Acquire();
         if (!_instance.IsFirstInstance)
         {
+            if (AppHost.IsPreview && e.Args.FirstOrDefault() == "--capture")
+            {
+                // Capture hors écran (développement) : ne jamais afficher de fenêtre sur l'écran de l'utilisateur.
+                Shutdown(3);
+                return;
+            }
+
             MessageBox.Show("Déménageur est déjà ouvert.", "Déménageur", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown(0);
             return;

@@ -78,12 +78,17 @@ public sealed partial class SoftwareItemViewModel : ObservableObject
     public MoveCandidate ToCandidate() => new(Software.Folder.Path!, Software.DisplayName, Software.Publisher, Software.Entries, Software.Folder.Source);
 }
 
-public sealed partial class SoftwareListViewModel : ObservableObject
+public sealed partial class SoftwareListViewModel : ObservableObject, INavigationAware
 {
+    /// <summary>Au-delà, l'inventaire est relu en arrivant sur la page (logiciels installés ou désinstallés entre-temps).</summary>
+    private static readonly TimeSpan MaxAge = TimeSpan.FromMinutes(5);
+
     private readonly Engine _engine;
     private readonly IWindowService _windows;
     private CancellationTokenSource? _sizes;
     private bool _driveFilterInitialized;
+    private int _loadedChangeCount = -1;
+    private DateTime _loadedAt = DateTime.MinValue;
 
     public SoftwareListViewModel(Engine engine, IWindowService windows)
     {
@@ -180,6 +185,13 @@ public sealed partial class SoftwareListViewModel : ObservableObject
                || software.Folder.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase);
     }
 
+    /// <summary>
+    /// L'inventaire complet (registre, règles, puis taille de chaque dossier) est coûteux : il n'est relu en arrivant
+    /// sur la page que s'il est périmé (opération ou exclusion depuis le dernier chargement, ou plus de 5 minutes).
+    /// </summary>
+    public Task OnNavigatedToAsync()
+        => _engine.ChangeCount != _loadedChangeCount || DateTime.UtcNow - _loadedAt > MaxAge ? LoadAsync() : Task.CompletedTask;
+
     [RelayCommand]
     public async Task LoadAsync()
     {
@@ -190,6 +202,13 @@ public sealed partial class SoftwareListViewModel : ObservableObject
 
         _sizes?.Cancel();
         IsLoading = true;
+        _loadedChangeCount = _engine.ChangeCount;
+        _loadedAt = DateTime.UtcNow;
+        // Tailles déjà connues : affichées tout de suite, puis recalculées en arrière-plan.
+        var knownSizes = Items.Where(i => i.Size is not null && i.Software.Folder.Path is not null)
+            .GroupBy(i => i.Software.Folder.Path!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Size, StringComparer.OrdinalIgnoreCase);
+        var previousId = Selected?.Software.Id;
         LoadingText = "Lecture du registre et analyse des logiciels…";
         try
         {
@@ -212,8 +231,15 @@ public sealed partial class SoftwareListViewModel : ObservableObject
             for (var i = 0; i < catalog.Count; i++)
             {
                 var item = new SoftwareItemViewModel(catalog[i]) { Status = statuses[i].Status, Verdicts = statuses[i].Verdicts };
+                if (catalog[i].Folder.Path is { } path && knownSizes.TryGetValue(path, out var known))
+                {
+                    item.Size = known;
+                }
+
                 Items.Add(item);
             }
+
+            Selected = previousId is null ? null : Items.FirstOrDefault(i => i.Software.Id == previousId);
 
             CatalogSnapshot = catalog;
             var previous = DriveFilter;

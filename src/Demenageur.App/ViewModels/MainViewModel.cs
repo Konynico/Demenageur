@@ -39,6 +39,12 @@ public sealed class DriveViewModel
     public string FreeText => $"{MovePlanner.Bytes(Free)} libres sur {MovePlanner.Bytes(Total)}";
 }
 
+/// <summary>Page qui se met à jour quand on y arrive (le bouton « Actualiser » reste là pour ce qui change pendant qu'on la regarde).</summary>
+public interface INavigationAware
+{
+    Task OnNavigatedToAsync();
+}
+
 /// <summary>Élément de navigation.</summary>
 public sealed record PageItem(string Title, Wpf.Ui.Controls.SymbolRegular Icon, ObservableObject Page);
 
@@ -80,6 +86,33 @@ public sealed partial class MainViewModel : ObservableObject
     public void Navigate(ObservableObject page)
     {
         SelectedPage = Pages.First(p => p.Page == page);
+    }
+
+    partial void OnSelectedPageChanged(PageItem value)
+    {
+        RunInBackground(RefreshDrivesAsync, null);
+        if (value?.Page is INavigationAware page)
+        {
+            RunInBackground(page.OnNavigatedToAsync, value.Title);
+        }
+    }
+
+    /// <summary>Lance une actualisation sans bloquer la navigation ; une erreur est journalisée, jamais ignorée en silence.</summary>
+    private static async void RunInBackground(Func<Task> refresh, string? pageTitle)
+    {
+        try
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            await refresh();
+            if (pageTitle is not null)
+            {
+                Serilog.Log.Information("Arrivée sur « {Page} » : actualisée en {Milliseconds} ms", pageTitle, clock.ElapsedMilliseconds);
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Actualisation à l'arrivée sur une page");
+        }
     }
 
     [RelayCommand]

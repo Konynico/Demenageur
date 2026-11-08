@@ -116,8 +116,19 @@ public sealed class Engine
     /// <summary>La liste des exclusions a changé (pour rafraîchir les pages qui l'affichent).</summary>
     public event Action? ExclusionsChanged;
 
+    private int _changeCount;
+
+    /// <summary>
+    /// Compteur incrémenté à chaque opération (déplacement, annulation, nettoyage, reprise) et à chaque changement
+    /// des exclusions : une page compare sa valeur à celle de son dernier chargement pour savoir si elle est périmée.
+    /// </summary>
+    public int ChangeCount => Volatile.Read(ref _changeCount);
+
+    private void MarkChanged() => Interlocked.Increment(ref _changeCount);
+
     private void SaveIfReal()
     {
+        MarkChanged();
         ExclusionsChanged?.Invoke();
         if (!IsPreview)
         {
@@ -268,8 +279,9 @@ public sealed class Engine
         }
     }
 
-    private static void LogResult(OperationResult result)
+    private void LogResult(OperationResult result)
     {
+        MarkChanged();
         if (result.Error is not null)
         {
             Log.Warning(result.Error, "Opération {Id} ({Kind}) : {Outcome} — {Message}", result.OperationId, result.Kind, result.Outcome, result.Message);

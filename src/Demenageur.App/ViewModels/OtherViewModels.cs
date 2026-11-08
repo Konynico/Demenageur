@@ -56,7 +56,7 @@ public sealed partial class MovedItemViewModel : ObservableObject
     private string integrity = string.Empty;
 }
 
-public sealed partial class MovesViewModel : ObservableObject
+public sealed partial class MovesViewModel : ObservableObject, INavigationAware
 {
     private readonly Engine _engine;
     private readonly IWindowService _windows;
@@ -81,10 +81,20 @@ public sealed partial class MovesViewModel : ObservableObject
     [ObservableProperty]
     private bool isBusy;
 
+    /// <summary>Quelques journaux et un contrôle de santé par déplacement (rapide) : rechargé à chaque arrivée sur la page.</summary>
+    public Task OnNavigatedToAsync() => LoadAsync();
+
     [RelayCommand]
     public async Task LoadAsync()
     {
+        if (IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
+        var previousId = Selected?.Moved.Move.Id;
+        var integrity = Items.Where(i => i.Integrity.Length > 0).ToDictionary(i => i.Moved.Move.Id, i => i.Integrity);
         try
         {
             var (moves, pending) = await Task.Run(() => (_engine.LoadMoves(), new RecoveryService(new MoveEngineContext
@@ -96,8 +106,11 @@ public sealed partial class MovesViewModel : ObservableObject
             Items.Clear();
             foreach (var move in moves)
             {
-                Items.Add(new MovedItemViewModel(move));
+                // Le résultat d'un contrôle d'intégrité déjà fait reste affiché.
+                Items.Add(new MovedItemViewModel(move) { Integrity = integrity.GetValueOrDefault(move.Move.Id, string.Empty) });
             }
+
+            Selected = Items.FirstOrDefault(i => i.Moved.Move.Id == previousId);
 
             Attention.Clear();
             foreach (var operation in pending.Where(o => !o.IsCommitted || o.LastStep == JournalSteps.NeedsAttention))
@@ -183,9 +196,10 @@ public sealed partial class MovesViewModel : ObservableObject
 /// <summary>Opération du journal.</summary>
 public sealed record OperationLine(string Id, string Title, string State, string Date, IReadOnlyList<JournalRecord> Records);
 
-public sealed partial class JournalViewModel : ObservableObject
+public sealed partial class JournalViewModel : ObservableObject, INavigationAware
 {
     private readonly Engine _engine;
+    private bool _loading;
 
     public JournalViewModel(Engine engine)
     {
@@ -199,10 +213,33 @@ public sealed partial class JournalViewModel : ObservableObject
 
     public string DataFolder => _engine.Data.DataRoot;
 
+    /// <summary>Lecture des journaux seulement (rapide) : rechargé à chaque arrivée sur la page.</summary>
+    public Task OnNavigatedToAsync() => LoadAsync();
+
     [RelayCommand]
     public async Task LoadAsync()
     {
+        if (_loading)
+        {
+            return;
+        }
+
+        _loading = true;
+        try
+        {
+            await LoadCoreAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoadCoreAsync()
+    {
         var operations = await Task.Run(() => _engine.Store.List());
+        // Garde l'opération choisie, sauf si c'était la plus récente : on suit alors la nouvelle plus récente.
+        var previous = Selected is { } s && Operations.IndexOf(s) > 0 ? s.Id : null;
         Operations.Clear();
         foreach (var operation in operations.OrderByDescending(o => o.Id, StringComparer.Ordinal))
         {
@@ -226,7 +263,7 @@ public sealed partial class JournalViewModel : ObservableObject
             Operations.Add(new OperationLine(operation.Id, $"{kind} — {operation.SoftwareName}", state, operation.Started?.LocalDateTime.ToString("dd/MM/yyyy HH:mm:ss") ?? string.Empty, operation.Journal.Records));
         }
 
-        Selected = Operations.FirstOrDefault();
+        Selected = Operations.FirstOrDefault(o => o.Id == previous) ?? Operations.FirstOrDefault();
     }
 
     [RelayCommand]
@@ -249,7 +286,7 @@ public sealed partial class HelpViewModel : ObservableObject
     private void StartDemo() => _windows.ShowDemo();
 }
 
-public sealed partial class SettingsViewModel : ObservableObject
+public sealed partial class SettingsViewModel : ObservableObject, INavigationAware
 {
     private readonly Engine _engine;
 
@@ -264,7 +301,19 @@ public sealed partial class SettingsViewModel : ObservableObject
         simulationOnly = engine.Settings.SimulationOnly;
         restorePointByDefault = engine.Settings.RestorePointByDefault;
         destinationFolderName = engine.Settings.DestinationFolderName;
-        RestorePointText = engine.RestorePoints.GetAvailability() switch
+        RefreshRestorePointText();
+    }
+
+    /// <summary>Protection système et lanceurs relus à chaque arrivée sur la page (lectures seules, rapides).</summary>
+    public async Task OnNavigatedToAsync()
+    {
+        RefreshRestorePointText();
+        await ScanLaunchersCoreAsync(() => Demenageur.Windows.Safety.LauncherInspector.ReadAll());
+    }
+
+    private void RefreshRestorePointText()
+    {
+        RestorePointText = _engine.RestorePoints.GetAvailability() switch
         {
             RestorePointAvailability.Available => "La protection système est active : un point de restauration peut être créé avant chaque déplacement.",
             RestorePointAvailability.ProtectionDisabled => "La protection système est DÉSACTIVÉE sur le disque de Windows : aucun point de restauration ne peut être créé. Déménageur ne l'active jamais lui-même ; tu peux le faire dans le panneau Windows (cela réserve de l'espace sur C:).",
@@ -272,7 +321,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         };
     }
 
-    public string RestorePointText { get; }
+    [ObservableProperty]
+    private string restorePointText = string.Empty;
 
     public string DataFolder => _engine.Data.DataRoot;
 
@@ -353,17 +403,40 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ObservableCollection<string> DetectedLaunchers { get; } = [];
 
     [ObservableProperty]
-    private string launchersStatus = "Clique sur « Analyser » pour lister les bibliothèques de jeux trouvées.";
+    private string launchersStatus = "Les bibliothèques de jeux sont listées à l'ouverture de cette page.";
 
     [RelayCommand]
-    private async Task ScanLaunchersAsync()
+    private Task ScanLaunchersAsync() => ScanLaunchersCoreAsync(() =>
+    {
+        // Bouton « Analyser » : capture système complète, dont profitera aussi la prochaine analyse des logiciels.
+        _engine.RefreshSystem();
+        return _engine.System.LauncherLocations;
+    });
+
+    private bool _scanning;
+
+    private async Task ScanLaunchersCoreAsync(Func<IReadOnlyList<ManagedLocation>> read)
+    {
+        if (_scanning)
+        {
+            return;
+        }
+
+        _scanning = true;
+        try
+        {
+            await ScanLaunchersOnceAsync(read);
+        }
+        finally
+        {
+            _scanning = false;
+        }
+    }
+
+    private async Task ScanLaunchersOnceAsync(Func<IReadOnlyList<ManagedLocation>> read)
     {
         LaunchersStatus = "Analyse en cours…";
-        var locations = await Task.Run(() =>
-        {
-            _engine.RefreshSystem();
-            return _engine.System.LauncherLocations;
-        });
+        var locations = await Task.Run(read);
         DetectedLaunchers.Clear();
         foreach (var group in locations.GroupBy(l => l.LauncherId))
         {
