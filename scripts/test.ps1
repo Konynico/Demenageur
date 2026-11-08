@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Lance les tests de Déménageur (toujours depuis un terminal NON administrateur).
 .DESCRIPTION

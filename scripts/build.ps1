@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Compile la solution Déménageur.
 .EXAMPLE
