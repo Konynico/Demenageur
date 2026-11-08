@@ -1,0 +1,54 @@
+﻿Déménageur {VERSION}
+====================
+
+Déplace un logiciel installé vers un autre disque (copie, vérification complète, puis jonction NTFS à
+l'emplacement d'origine). Windows et le logiciel continuent d'utiliser le même chemin.
+Code source, aide et licence : https://github.com/Konynico/Demenageur
+
+
+INSTALLER
+---------
+
+1. Extrais le zip : clic droit sur Demenageur-{VERSION}.zip → « Extraire tout… ».
+   (Ne lance rien depuis l'intérieur du zip.)
+
+2. Facultatif mais conseillé : vérifie que le zip est bien l'original. Dans PowerShell :
+       Get-FileHash .\Demenageur-{VERSION}.zip
+   Le résultat doit être identique à l'empreinte SHA-256 publiée sur la page de la version (GitHub).
+
+3. Dans le dossier extrait, double-clique sur Installer.cmd et accepte la demande d'autorisation (UAC).
+   Déménageur est copié dans C:\Program Files\Demenageur, avec un raccourci « Déménageur » dans le menu Démarrer.
+
+   Si Windows affiche « Windows a protégé votre ordinateur » : « Informations complémentaires » →
+   « Exécuter quand même ». L'application n'est pas signée par un certificat payant : c'est normal.
+   À chaque lancement, l'UAC affichera aussi « Éditeur : inconnu ».
+
+Tu peux ensuite supprimer le dossier extrait.
+
+
+AVANT DE DÉPLACER UN VRAI LOGICIEL
+----------------------------------
+
+- Lis l'avertissement du premier lancement.
+- Essaie la démo sans risque (logiciel fictif) : déplacement, puis annulation.
+- Déménageur fait toujours une simulation avant d'agir et peut annuler un déplacement (« Mes déplacements »).
+- Il est fourni tel quel, sans garantie (voir LICENSE.txt).
+
+
+METTRE À JOUR / DÉSINSTALLER
+----------------------------
+
+- Mise à jour : extrais la nouvelle version et relance Installer.cmd (l'ancienne version est remplacée,
+  tes déplacements et leur historique sont conservés).
+- Désinstaller : dans un PowerShell lancé en administrateur, depuis ce dossier :
+       powershell -ExecutionPolicy Bypass -File .\installer.ps1 -Desinstaller
+  Les journaux (C:\ProgramData\Demenageur) sont gardés : ils servent à annuler des déplacements.
+  Ajoute -SupprimerDonnees pour les effacer aussi.
+
+
+CONFIDENTIALITÉ
+---------------
+
+Déménageur n'envoie rien sur Internet et ne collecte rien. Il garde uniquement sur ce PC, dans
+C:\ProgramData\Demenageur (réservé aux administrateurs), les journaux de ses opérations et des logs
+techniques conservés 60 jours.

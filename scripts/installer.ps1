@@ -94,6 +94,9 @@ Assert-NotRunning 'mettre à jour'
 if (Test-Path (Join-Path $target 'Demenageur.exe')) { Remove-Tree $target } # mise à jour : ancienne version retirée entièrement
 New-Item -ItemType Directory -Force -Path $target | Out-Null
 $files | Copy-Item -Destination $target -Force
+# Fichiers d'un zip téléchargé : la marque « provenant d'Internet » est retirée des copies installées (l'utilisateur vient
+# de choisir de les installer en administrateur) ; sinon SmartScreen la reverrait à chaque lancement depuis Program Files.
+Get-ChildItem -LiteralPath $target -File | Unblock-File
 
 $shell = New-Object -ComObject WScript.Shell
 $link = $shell.CreateShortcut($shortcut)

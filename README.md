@@ -18,6 +18,12 @@ Le plan détaillé (architecture, protocole, garde-fous, tests) est dans [docs/P
 Aucune entrée n'est ajoutée au registre : Déménageur n'apparaît pas dans « Programmes et fonctionnalités ».
 Placé à côté de `Demenageur.exe` (dossier de version), `installer.ps1` installe ces fichiers sans republier.
 
+**Sans compiler** : télécharge `Demenageur-<version>.zip` dans les [Releases](https://github.com/Konynico/Demenageur/releases),
+extrais-le, puis double-clique sur `Installer.cmd` (le `LISEZMOI.txt` du zip détaille tout, dont la vérification SHA-256).
+
+**Préparer une version** (sans droits admin) : `.\scripts\publier-version.ps1` produit dans `artifacts\version` le zip
+et `SHA256SUMS.txt`, à joindre à la Release GitHub.
+
 L'application demande les droits administrateur (UAC) à chaque lancement. Elle doit tourner depuis Program Files :
 lancée depuis un dossier modifiable sans élévation, elle affiche un avertissement au démarrage.
 
