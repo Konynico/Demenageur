@@ -47,7 +47,9 @@ Copy-Item (Join-Path $PSScriptRoot 'version\Installer.cmd') $folder
 $readme = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'version\LISEZMOI.txt') -Raw -Encoding UTF8).Replace('{VERSION}', $version)
 [IO.File]::WriteAllText((Join-Path $folder 'LISEZMOI.txt'), $readme, [Text.UTF8Encoding]::new($true))
 
-Compress-Archive -Path $folder -DestinationPath $zip
+# API .NET plutôt que Compress-Archive (PowerShell 5.1 y écrit des « \ », hors norme ZIP).
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[IO.Compression.ZipFile]::CreateFromDirectory($folder, $zip, [IO.Compression.CompressionLevel]::Optimal, $true)
 
 $zipHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
 $exeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $folder 'Demenageur.exe')).Hash.ToLowerInvariant()
