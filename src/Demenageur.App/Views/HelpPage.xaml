@@ -102,6 +102,10 @@
                            Text="rmdir &quot;C:\Program Files\App&quot;&#x0a;robocopy &quot;D:\Logiciels déplacés\App&quot; &quot;C:\Program Files\App&quot; /E /COPYALL /DCOPY:DAT /XJ&#x0a;(vérifier que le logiciel fonctionne, puis supprimer la copie sur D:)" />
             </Border>
             <TextBlock Margin="0,8,0,0" Style="{StaticResource Secondary}" Text="« rmdir » sans /S supprime uniquement la jonction, jamais les fichiers vers lesquels elle pointe." />
+
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Confidentialité" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Déménageur n'envoie rien sur Internet et ne collecte rien. Il enregistre uniquement sur ce PC, dans C:\ProgramData\Demenageur (dossier réservé aux administrateurs), les journaux de ses opérations (chemins, identifiants de fichiers, empreintes, permissions), nécessaires pour annuler un déplacement, et des logs techniques conservés 60 jours. Le fichier LISEZMOI-Demenageur.txt du dossier de destination liste les logiciels déplacés ; il n'est lisible que par les administrateurs et ton compte." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Pour effacer : Paramètres → « Effacer l'historique des opérations terminées… » (les journaux des logiciels encore déplacés sont conservés), ou à la désinstallation : scripts\installer.ps1 -Desinstaller -SupprimerDonnees. Ces fichiers ne sont pas chiffrés par Déménageur : active BitLocker si tu veux protéger le disque." />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

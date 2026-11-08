@@ -54,6 +54,12 @@ public sealed class WindowService : IWindowService
         return dialog.ShowDialog(Owner) == true ? dialog.FolderName : null;
     }
 
+    public bool Confirm(string title, string message)
+        => MessageBox.Show(Owner!, message, title, MessageBoxButton.OKCancel, MessageBoxImage.Warning, MessageBoxResult.Cancel) == MessageBoxResult.OK;
+
+    public void Inform(string title, string message)
+        => MessageBox.Show(Owner!, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+
     public void ShowDemo()
     {
         var drives = Drives;

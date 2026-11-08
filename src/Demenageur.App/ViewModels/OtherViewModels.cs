@@ -457,6 +457,47 @@ public sealed partial class SettingsViewModel : ObservableObject, INavigationAwa
     [RelayCommand]
     private void OpenDataFolder() => ShellActions.OpenFolder(_engine.Data.DataRoot);
 
+    // ── Historique (données personnelles : droit à l'effacement) ──
+
+    [RelayCommand]
+    private async Task DeleteHistoryAsync()
+    {
+        try
+        {
+            var deletable = await Task.Run(_engine.FindDeletableHistory);
+            if (deletable.Count == 0)
+            {
+                _windows.Inform("Historique", "Rien à effacer : il ne reste que les journaux des logiciels encore déplacés (indispensables pour les annuler) et des opérations en cours.");
+                return;
+            }
+
+            static string KindOf(OperationKind kind) => kind switch
+            {
+                OperationKind.Move => "déplacement",
+                OperationKind.Undo => "annulation",
+                OperationKind.Retire => "nettoyage",
+                _ => "opération",
+            };
+            var names = string.Join("\n", deletable.Take(15).Select(o => $"• {o.SoftwareName} ({KindOf(o.Kind)}, {o.Started:dd/MM/yyyy})"));
+            var more = deletable.Count > 15 ? $"\n… et {deletable.Count - 15} autre(s)." : string.Empty;
+            if (!_windows.Confirm("Effacer l'historique", $"Effacer définitivement les journaux de {deletable.Count} opération(s) terminée(s) ?\n\n{names}{more}\n\n"
+                    + "Les journaux des logiciels encore déplacés sont conservés. Les logs techniques (60 jours) ne sont pas concernés."))
+            {
+                return;
+            }
+
+            var (deleted, failed) = await Task.Run(_engine.DeleteFinishedHistory);
+            HistoryMessage = failed == 0 ? $"{deleted} opération(s) effacée(s) de l'historique." : $"{deleted} opération(s) effacée(s), {failed} n'ont pas pu l'être (voir les logs).";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException or UnauthorizedAccessException or Core.FileSystem.FileSystemException)
+        {
+            HistoryMessage = "Effacement impossible : " + ex.Message;
+        }
+    }
+
+    [ObservableProperty]
+    private string historyMessage = string.Empty;
+
     // ── Exclusions manuelles ──
 
     public ObservableCollection<UserExclusion> Exclusions { get; } = [];
@@ -560,6 +601,10 @@ public interface IWindowService
     bool ShowRetireWizard(MovedSoftware moved);
 
     string? PickFolder(string title);
+
+    bool Confirm(string title, string message);
+
+    void Inform(string title, string message);
 
     void ShowDemo();
 }

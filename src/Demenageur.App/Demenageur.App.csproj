@@ -42,6 +42,11 @@
     <Exec Command="&quot;$(SignTool)&quot; verify /pa &quot;$(PublishDir)Demenageur.exe&quot;" />
   </Target>
 
+  <!-- Licences des composants tiers : livrées à côté de l'exe (pas dans le fichier unique). -->
+  <ItemGroup>
+    <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Demenageur.Core\Demenageur.Core.csproj" />
     <ProjectReference Include="..\Demenageur.Windows\Demenageur.Windows.csproj" />

@@ -72,6 +72,10 @@
                     <TextBlock FontWeight="SemiBold" Text="Données de l'application" />
                     <TextBlock Margin="0,4,0,6" Style="{StaticResource Secondary}" Text="{Binding DataFolder}" />
                     <ui:Button HorizontalAlignment="Left" Command="{Binding OpenDataFolderCommand}" Content="Ouvrir le dossier" />
+                    <TextBlock Margin="0,12,0,0" Style="{StaticResource Secondary}" TextWrapping="Wrap"
+                               Text="Rien n'est envoyé sur Internet. Ce dossier, réservé aux administrateurs, contient les journaux des opérations (chemins, identifiants de fichiers, empreintes, permissions), nécessaires pour annuler un déplacement, et des logs techniques conservés 60 jours." />
+                    <ui:Button Margin="0,6,0,0" HorizontalAlignment="Left" Command="{Binding DeleteHistoryCommand}" Content="Effacer l'historique des opérations terminées…" />
+                    <TextBlock Margin="0,4,0,0" Style="{StaticResource Secondary}" Text="{Binding HistoryMessage}" TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
 

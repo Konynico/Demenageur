@@ -278,6 +278,41 @@ public sealed class Engine
         return new TreeVerifier(guard).Verify(manifest, moved.Destination, new VerificationOptions { CheckDestinationIdentities = false }, cancellationToken: cancellationToken);
     }
 
+    /// <summary>Opérations dont le journal peut être effacé sans rien perdre (voir <see cref="OperationHistory"/>).</summary>
+    public IReadOnlyList<StoredOperation> FindDeletableHistory() => OperationHistory.FindDeletable(Store.List());
+
+    /// <summary>Efface l'historique effaçable. Renvoie (effacées, échecs).</summary>
+    public (int Deleted, int Failed) DeleteFinishedHistory()
+    {
+        if (IsPreview)
+        {
+            throw new InvalidOperationException("Aperçu : rien n'est effacé.");
+        }
+
+        if (OperationInProgress)
+        {
+            throw new InvalidOperationException("Une opération est en cours : réessaie quand elle sera terminée.");
+        }
+
+        var guard = new PathGuard(Raw, ScopeFactory.Create(Raw, [Store.Root]));
+        int deleted = 0, failed = 0;
+        foreach (var operation in FindDeletableHistory())
+        {
+            if (OperationHistory.Delete(guard, operation))
+            {
+                deleted++;
+            }
+            else
+            {
+                failed++;
+            }
+        }
+
+        Log.Information("Historique effacé : {Deleted} opération(s), {Failed} échec(s)", deleted, failed);
+        MarkChanged();
+        return (deleted, failed);
+    }
+
     private void EnsureRealOperationsAllowed()
     {
         if (Settings.SimulationOnly || IsPreview)

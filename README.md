@@ -10,9 +10,13 @@ Le plan détaillé (architecture, protocole, garde-fous, tests) est dans [docs/P
 
 ```powershell
 # Dans un terminal PowerShell lancé EN ADMINISTRATEUR :
-.\scripts\installer.ps1              # publie si besoin, copie dans C:\Program Files\Demenageur, raccourci menu Démarrer
-.\scripts\installer.ps1 -Desinstaller
+.\scripts\installer.ps1              # republie, remplace la version installée dans C:\Program Files\Demenageur, raccourci menu Démarrer
+.\scripts\installer.ps1 -Desinstaller                     # garde les journaux (utiles pour annuler des déplacements)
+.\scripts\installer.ps1 -Desinstaller -SupprimerDonnees   # efface aussi C:\ProgramData\Demenageur (confirmation demandée)
 ```
+
+Aucune entrée n'est ajoutée au registre : Déménageur n'apparaît pas dans « Programmes et fonctionnalités ».
+Placé à côté de `Demenageur.exe` (dossier de version), `installer.ps1` installe ces fichiers sans republier.
 
 L'application demande les droits administrateur (UAC) à chaque lancement. Elle doit tourner depuis Program Files :
 lancée depuis un dossier modifiable sans élévation, elle affiche un avertissement au démarrage.
@@ -64,6 +68,23 @@ une copie orpheline reste sur le disque cible. Elle est signalée au démarrage 
 Ce qui se trouve à l'emplacement d'origine n'est jamais touché, avec une seule exception : la jonction laissée en place
 par un désinstalleur. Elle n'est supprimée qu'après saisie du nom du logiciel, et seulement si plus aucune entrée de
 désinstallation ne désigne ce dossier.
+
+## Confidentialité
+
+Déménageur n'envoie rien sur Internet et ne collecte rien. Il enregistre uniquement sur le PC, dans
+`C:\ProgramData\Demenageur` (réservé aux administrateurs) :
+- les journaux de ses opérations (chemins, identifiants de fichiers, empreintes, permissions), nécessaires pour annuler un déplacement ;
+- des logs techniques, conservés 60 jours.
+
+Le fichier `LISEZMOI-Demenageur.txt` du dossier de destination liste les logiciels déplacés (lisible par les
+administrateurs et le compte qui les a déplacés). Pour effacer : Paramètres → « Effacer l'historique des opérations
+terminées… » (les journaux des logiciels encore déplacés sont conservés), ou `installer.ps1 -Desinstaller -SupprimerDonnees`.
+Ces fichiers ne sont pas chiffrés par Déménageur : BitLocker protège le disque si besoin.
+
+## Composants tiers
+
+WPF-UI et CommunityToolkit.Mvvm (MIT), Serilog (Apache-2.0), .NET et Microsoft.Extensions (MIT). Les licences complètes
+sont dans [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), livré à côté de l'exécutable.
 
 ## Structure
 
