@@ -19,6 +19,9 @@ internal static class AppHost
     public static readonly bool IsPreview = false;
 #endif
 
+    /// <summary>Résultat de la sécurisation du dossier de données (null en aperçu).</summary>
+    public static SecureDirectoryOutcome? DataFolderOutcome { get; private set; }
+
     public static IHost Build(string[] args)
     {
         // 1) Dossier de données protégé AVANT toute écriture (logs compris).
@@ -33,7 +36,8 @@ internal static class AppHost
         else
         {
             dataLocation = new SecureAppDataLocation();
-            outcome = dataLocation.EnsureSecured().ToString();
+            DataFolderOutcome = dataLocation.EnsureSecured();
+            outcome = DataFolderOutcome.ToString()!;
         }
 
         // 2) Logs techniques.

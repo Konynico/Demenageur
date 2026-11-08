@@ -65,8 +65,28 @@ public sealed class SystemServicesTests
         Assert.Null(hooks.CheckBeforeLock(folder));
         hooks.EnterCriticalSection();
         hooks.LeaveCriticalSection();
-        WindowsMoveHooks.RecoverExplorer(sandbox.Root); // aucun témoin : rien à faire
+        Assert.Null(WindowsMoveHooks.RecoverExplorer(sandbox.Root, out var detail)); // aucun témoin : rien à faire
+        Assert.Null(detail);
+        Assert.Null(hooks.ExplorerWarning);
         Assert.False(File.Exists(Path.Combine(sandbox.Root, WindowsMoveHooks.ExplorerFlagFileName)));
+    }
+
+    /// <summary>
+    /// Relance de l'Explorateur sans élévation : le jeton emprunté doit être celui d'un processus de notre session,
+    /// non élevé (sihost.exe en priorité). Rien n'est lancé par ce test.
+    /// </summary>
+    [Fact]
+    public void An_unelevated_token_source_is_found_in_the_session()
+    {
+        var sessionId = System.Diagnostics.Process.GetCurrentProcess().SessionId;
+        if (System.Diagnostics.Process.GetProcessesByName("sihost").All(p => p.SessionId != sessionId))
+        {
+            Assert.Skip("Pas de session interactive (sihost.exe absent).");
+        }
+
+        Assert.True(UnelevatedLauncher.TryFindTokenSource(out var source), source);
+        Assert.StartsWith("sihost", source, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value, source);
     }
 
     [Fact]

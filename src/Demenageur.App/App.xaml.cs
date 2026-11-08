@@ -118,7 +118,26 @@ public partial class App : Application
                     viewModel.StartupMessages.Add(weakness);
                 }
 
-                WindowsMoveHooks.RecoverExplorer(engine.Data.DataRoot);
+                if (AppHost.DataFolderOutcome == Demenageur.Windows.AppData.SecureDirectoryOutcome.Repaired)
+                {
+                    const string repaired = "Le dossier de données de Déménageur (C:\\ProgramData\\Demenageur) avait des droits trop larges : "
+                        + "ils ont été corrigés. Un autre compte a pu y accéder avant : vérifie la liste de tes déplacements et le journal.";
+                    Log.Warning("{Message}", repaired);
+                    viewModel.StartupMessages.Add(repaired);
+                }
+
+                var explorerAdvice = WindowsMoveHooks.RecoverExplorer(engine.Data.DataRoot, out var explorerDetail);
+                if (explorerDetail is not null)
+                {
+                    Log.Information("Relance de l'Explorateur après une opération interrompue : {Detail}", explorerDetail);
+                }
+
+                if (explorerAdvice is not null)
+                {
+                    Log.Warning("{Advice}", explorerAdvice);
+                    viewModel.StartupMessages.Add(explorerAdvice);
+                }
+
                 var recovered = await Task.Run(engine.RecoverPending);
                 foreach (var (operation, result) in recovered)
                 {

@@ -241,6 +241,13 @@ public sealed class MoveTransactionTests
         var strict = new OperationStore(scenario.Sandbox.RawFs, scenario.Operations);
         var operation = Assert.Single(strict.List());
         Assert.False(operation.Trusted);
+
+        // Manifeste : même règle que le journal. Un manifeste forgé ne doit jamais guider une suppression.
+        if (scenario.Store().LoadManifest(operation.Id, OperationStore.ManifestFileName) is not null)
+        {
+            Assert.Null(strict.LoadManifest(operation.Id, OperationStore.ManifestFileName));
+        }
+
         var context = scenario.Context(scenario.Sandbox.RawFs);
         var service = new RecoveryService(new MoveEngineContext { FileSystem = context.FileSystem, ScopeFactory = context.ScopeFactory, Store = strict, Retry = RetryPolicy.None });
         Assert.Equal(OperationOutcome.NeedsAttention, service.Recover(operation).Outcome);

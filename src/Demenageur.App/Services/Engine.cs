@@ -196,6 +196,18 @@ public sealed class Engine
             ExecutableFiles = plan.ExecutableFiles,
         }, Processes, Data.DataRoot);
         var result = new MoveTransaction(Context(hooks)).Execute(new MoveRequest(plan.Request.Candidate.DisplayName, plan.Source, plan.Destination), progress, cancellationToken);
+        if (hooks.ExplorerRestartDetail is { } detail)
+        {
+            Log.Information("Relance de l'Explorateur : {Detail}", detail);
+        }
+
+        if (hooks.ExplorerWarning is { } explorerWarning)
+        {
+            // Jamais de relance en administrateur : l'utilisateur est prévenu et guidé.
+            Log.Warning("{Warning}", explorerWarning);
+            result = result with { Warnings = [.. result.Warnings, explorerWarning] };
+        }
+
         LogResult(result);
         UpdateReadme(plan.Request.DestinationRoot);
         return result;

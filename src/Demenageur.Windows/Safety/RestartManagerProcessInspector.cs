@@ -120,7 +120,12 @@ public sealed class RestartManagerProcessInspector : IProcessInspector
         }
     }
 
-    /// <summary>Arrête puis relance les applications (dont l'Explorateur) qui retiennent des fichiers, via Restart Manager.</summary>
+    /// <summary>
+    /// Arrête les applications (dont l'Explorateur) qui retiennent des fichiers, via Restart Manager. Le jeton rendu
+    /// relance ensuite les autres applications, mais JAMAIS l'Explorateur : relancé par Restart Manager depuis notre
+    /// processus élevé, il deviendrait le shell de la session avec les droits administrateur. C'est l'appelant qui le
+    /// relance sans élévation (<see cref="Demenageur.Windows.SystemServices.UnelevatedLauncher"/>).
+    /// </summary>
     public static IDisposable ShutdownApplicationsUsing(IReadOnlyList<string> files)
     {
         var key = new StringBuilder(64);
@@ -130,16 +135,27 @@ public sealed class RestartManagerProcessInspector : IProcessInspector
         }
 
         var batch = files.Take(RmMaxFilesPerCall).Select(f => PathUtil.ExtendedPrefix + f).ToArray();
-        if (RmRegisterResources(session, (uint)batch.Length, batch, 0, null, 0, null) != 0 || RmShutdown(session, RmForceShutdown, 0) != 0)
+        if (RmRegisterResources(session, (uint)batch.Length, batch, 0, null, 0, null) != 0)
         {
             RmEndSession(session);
             throw new Win32Exception("Impossible d'arrêter les applications qui utilisent le logiciel.");
         }
 
-        return new RestartToken(session);
+        // Filtre « ne pas redémarrer » sur l'Explorateur. S'il ne peut pas être posé, on ne relancera rien du tout
+        // par Restart Manager (mieux vaut une application à rouvrir à la main qu'un shell administrateur).
+        var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+        var explorerFiltered = RmAddFilter(session, explorer, 0, null, RmNoRestart) == 0;
+
+        if (RmShutdown(session, RmForceShutdown, 0) != 0)
+        {
+            RmEndSession(session);
+            throw new Win32Exception("Impossible d'arrêter les applications qui utilisent le logiciel.");
+        }
+
+        return new RestartToken(session, restartOthers: explorerFiltered);
     }
 
-    private sealed class RestartToken(uint session) : IDisposable
+    private sealed class RestartToken(uint session, bool restartOthers) : IDisposable
     {
         private bool _done;
 
@@ -151,7 +167,11 @@ public sealed class RestartManagerProcessInspector : IProcessInspector
             }
 
             _done = true;
-            RmRestart(session, 0, 0);
+            if (restartOthers)
+            {
+                RmRestart(session, 0, 0);
+            }
+
             RmEndSession(session);
         }
     }
@@ -206,6 +226,12 @@ public sealed class RestartManagerProcessInspector : IProcessInspector
 
     [DllImport("rstrtmgr.dll")]
     private static extern int RmRestart(uint sessionHandle, int restartFlags, nint fnStatus);
+
+    /// <summary>RM_FILTER_ACTION.RmNoRestart : l'application est arrêtée mais jamais relancée par Restart Manager.</summary>
+    private const int RmNoRestart = 1;
+
+    [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)]
+    private static extern int RmAddFilter(uint sessionHandle, string? moduleName, nint application, string? serviceShortName, int filterAction);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern nint OpenProcess(uint access, bool inherit, int processId);

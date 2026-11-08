@@ -157,15 +157,36 @@ public sealed class OperationStore
             return null;
         }
 
-        var owner = SecurityDescriptorTools.GetOwner(_fs.GetSecurityDescriptor(journalPath, entry.Identity));
-        var trusted = owner is not null && _trustedOwners.Contains(owner);
+        // Le journal ET son dossier doivent appartenir aux administrateurs : le propriétaire d'un dossier peut en
+        // modifier les droits, donc ceux des fichiers qu'il contient (hérités), même écrits par Déménageur.
+        var trusted = IsTrusted(journalPath, entry.Identity) && IsTrustedDirectory(DirectoryOf(operationId));
         var content = trusted ? OperationJournal.Read(_fs, journalPath) : new JournalContent([], false, false);
         return new StoredOperation(operationId, DirectoryOf(operationId), content, trusted);
     }
 
+    /// <summary>
+    /// Manifeste d'une opération, ou null s'il est absent ou n'appartient pas aux administrateurs : un manifeste
+    /// forgé ne doit jamais guider une suppression (l'opération passe alors en « intervention nécessaire »).
+    /// </summary>
     public Manifest? LoadManifest(string operationId, string fileName)
     {
-        var bytes = _fs.ReadAllBytes(PathUtil.Join(DirectoryOf(operationId), fileName));
+        var path = PathUtil.Join(DirectoryOf(operationId), fileName);
+        var entry = _fs.GetEntry(path);
+        if (entry is null || entry.Kind != FsEntryKind.File || !IsTrusted(path, entry.Identity) || !IsTrustedDirectory(DirectoryOf(operationId)))
+        {
+            return null;
+        }
+
+        var bytes = _fs.ReadAllBytes(path);
         return bytes is null ? null : ManifestSerializer.Deserialize(bytes);
     }
+
+    private bool IsTrusted(string path, FileIdentity identity)
+    {
+        var owner = SecurityDescriptorTools.GetOwner(_fs.GetSecurityDescriptor(path, identity));
+        return owner is not null && _trustedOwners.Contains(owner);
+    }
+
+    private bool IsTrustedDirectory(string directory)
+        => _fs.GetEntry(directory) is { Kind: FsEntryKind.Directory } entry && IsTrusted(directory, entry.Identity);
 }

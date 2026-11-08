@@ -29,6 +29,20 @@ public sealed class WindowsMoveHooks : IMoveHooks
     private readonly List<string> _stoppedServices = [];
     private IDisposable? _explorer;
 
+    /// <summary>
+    /// Texte à montrer à l'utilisateur si l'Explorateur n'a pas pu être relancé sans élévation (null sinon).
+    /// </summary>
+    public string? ExplorerWarning { get; private set; }
+
+    /// <summary>Détail technique de la relance de l'Explorateur, pour les logs (null si elle n'a pas eu lieu).</summary>
+    public string? ExplorerRestartDetail { get; private set; }
+
+    /// <summary>Consigne affichée quand l'Explorateur n'a pas pu être relancé sans élévation.</summary>
+    public const string ExplorerRestartAdvice =
+        "L'Explorateur (barre des tâches, bureau) n'a pas pu être relancé sans les droits administrateur, et Déménageur "
+        + "refuse de le relancer en administrateur. Relance-le toi-même : Ctrl+Maj+Échap → « Exécuter une nouvelle tâche » → "
+        + "explorer (sans cocher « Créer cette tâche avec des privilèges d'administration »), ou ferme puis rouvre ta session.";
+
     public WindowsMoveHooks(CriticalSectionOptions options, IProcessInspector processes, string dataDirectory)
     {
         _options = options;
@@ -77,8 +91,17 @@ public sealed class WindowsMoveHooks : IMoveHooks
             {
                 _explorer.Dispose();
                 _explorer = null;
-                EnsureExplorerRunning();
-                File.Delete(_explorerFlagFile);
+                var restarted = EnsureExplorerRunning(out var detail);
+                ExplorerRestartDetail = detail;
+                if (restarted)
+                {
+                    File.Delete(_explorerFlagFile);
+                }
+                else
+                {
+                    // Fichier témoin conservé : nouvel essai au prochain démarrage de Déménageur.
+                    ExplorerWarning = ExplorerRestartAdvice;
+                }
             }
 
             foreach (var name in _stoppedServices)
@@ -102,25 +125,42 @@ public sealed class WindowsMoveHooks : IMoveHooks
         }
     }
 
-    /// <summary>Au démarrage de l'app : si l'Explorateur a été arrêté par une opération interrompue, le relancer.</summary>
-    public static void RecoverExplorer(string dataDirectory)
+    /// <summary>
+    /// Au démarrage de l'app : si l'Explorateur a été arrêté par une opération interrompue, le relancer (sans élévation).
+    /// Renvoie la consigne à afficher s'il n'a pas pu l'être, sinon null.
+    /// </summary>
+    public static string? RecoverExplorer(string dataDirectory, out string? detail)
     {
+        detail = null;
         var flag = Path.Combine(dataDirectory, ExplorerFlagFileName);
         if (!File.Exists(flag))
         {
-            return;
+            return null;
         }
 
-        EnsureExplorerRunning();
+        if (!EnsureExplorerRunning(out detail))
+        {
+            return ExplorerRestartAdvice;
+        }
+
         File.Delete(flag);
+        return null;
     }
 
-    private static void EnsureExplorerRunning()
+    /// <summary>
+    /// Relance l'Explorateur s'il ne tourne pas, TOUJOURS sans élévation (jamais Process.Start depuis notre processus
+    /// administrateur). Renvoie false s'il n'est pas lancé : aucun jeton non élevé trouvé, ou échec du lancement.
+    /// </summary>
+    private static bool EnsureExplorerRunning(out string detail)
     {
-        if (Process.GetProcessesByName("explorer").Length == 0)
+        if (Process.GetProcessesByName("explorer").Length > 0)
         {
-            Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe")) { UseShellExecute = true })?.Dispose();
+            detail = "l'Explorateur tournait déjà";
+            return true;
         }
+
+        var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+        return UnelevatedLauncher.TryStart(explorer, out detail);
     }
 
     [DllImport("kernel32.dll")]

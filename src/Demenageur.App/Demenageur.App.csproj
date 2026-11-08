@@ -30,6 +30,16 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
+  <!-- Signature de code (audit E3) : inactive tant qu'aucun certificat n'est indiqué.
+       dotnet publish ... -p:SignThumbprint=<empreinte SHA-1 du certificat installé> [-p:SignTool=<chemin de signtool.exe>] -->
+  <Target Name="SignPublished" AfterTargets="Publish" Condition="'$(SignThumbprint)' != ''">
+    <PropertyGroup>
+      <SignTool Condition="'$(SignTool)' == ''">signtool</SignTool>
+    </PropertyGroup>
+    <Exec Command="&quot;$(SignTool)&quot; sign /sha1 $(SignThumbprint) /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d Déménageur &quot;$(PublishDir)Demenageur.exe&quot;" />
+    <Exec Command="&quot;$(SignTool)&quot; verify /pa &quot;$(PublishDir)Demenageur.exe&quot;" />
+  </Target>
+
   <ItemGroup>
     <ProjectReference Include="..\Demenageur.Core\Demenageur.Core.csproj" />
     <ProjectReference Include="..\Demenageur.Windows\Demenageur.Windows.csproj" />
