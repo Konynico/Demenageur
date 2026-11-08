@@ -54,12 +54,47 @@ public sealed partial class MovedItemViewModel : ObservableObject
 
     [ObservableProperty]
     private string integrity = string.Empty;
+
+    /// <summary>Taille actuelle de la copie (null : calcul en cours).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSize))]
+    private long? copySize;
+
+    /// <summary>Jonction en place : la copie, c'est l'espace libéré sur le disque d'origine.</summary>
+    public bool FreesSource => Moved.JunctionActive;
+
+    /// <summary>Copie restée seule (désinstallation, dossier recréé par une mise à jour…) : elle ne libère plus rien.</summary>
+    public bool IsOrphanCopy => !FreesSource && Moved.Health is not MoveHealth.DestinationMissing;
+
+    public bool ShowsSize => FreesSource || IsOrphanCopy;
+
+    public bool HasSize => CopySize is > 0;
+
+    public string SourceDrive => DriveOf(Source);
+
+    public string DestinationDrive => DriveOf(Destination);
+
+    public string SizeCaption => FreesSource ? $"libérés sur {SourceDrive}" : $"occupés sur {DestinationDrive} (copie orpheline)";
+
+    internal static string DriveOf(string path) => path.Length >= 2 && path[1] == ':' ? path[..2].ToUpperInvariant() : path;
 }
 
 public sealed partial class MovesViewModel : ObservableObject, INavigationAware
 {
     private readonly Engine _engine;
     private readonly IWindowService _windows;
+    private CancellationTokenSource? _sizes;
+
+    /// <summary>Tailles déjà calculées (par opération), affichées aussitôt au rechargement suivant puis recalculées.</summary>
+    private readonly Dictionary<string, long> _knownSizes = new(StringComparer.Ordinal);
+
+    /// <summary>« Espace libéré grâce à tes déplacements : 3,4 Go sur C: » (vide tant que rien n'est calculé).</summary>
+    [ObservableProperty]
+    private string freedSummary = string.Empty;
+
+    /// <summary>« 435 Mo de copies orphelines sur D: : « Nettoyer la copie… » les supprime. »</summary>
+    [ObservableProperty]
+    private string orphanSummary = string.Empty;
 
     public MovesViewModel(Engine engine, IWindowService windows)
     {
@@ -107,10 +142,16 @@ public sealed partial class MovesViewModel : ObservableObject, INavigationAware
             foreach (var move in moves)
             {
                 // Le résultat d'un contrôle d'intégrité déjà fait reste affiché.
-                Items.Add(new MovedItemViewModel(move) { Integrity = integrity.GetValueOrDefault(move.Move.Id, string.Empty) });
+                Items.Add(new MovedItemViewModel(move)
+                {
+                    Integrity = integrity.GetValueOrDefault(move.Move.Id, string.Empty),
+                    CopySize = _knownSizes.TryGetValue(move.Move.Id, out var known) ? known : null,
+                });
             }
 
             Selected = Items.FirstOrDefault(i => i.Moved.Move.Id == previousId);
+            UpdateSpaceSummary();
+            _ = ComputeSizesAsync();
 
             Attention.Clear();
             foreach (var operation in pending.Where(o => !o.IsCommitted || o.LastStep == JournalSteps.NeedsAttention))
@@ -122,6 +163,55 @@ public sealed partial class MovesViewModel : ObservableObject, INavigationAware
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>Taille de chaque copie, en arrière-plan (les gros jeux peuvent prendre quelques secondes).</summary>
+    private async Task ComputeSizesAsync()
+    {
+        _sizes?.Cancel();
+        _sizes = new CancellationTokenSource();
+        var token = _sizes.Token;
+        var calculator = new FolderSizeCalculator(_engine.Raw);
+        foreach (var item in Items.Where(i => i.ShowsSize).ToList())
+        {
+            var bytes = await Task.Run(() =>
+            {
+                try
+                {
+                    return calculator.Compute(item.Destination, token).Bytes;
+                }
+                catch (Exception ex) when (ex is Core.FileSystem.FileSystemException or OperationCanceledException)
+                {
+                    return -1L;
+                }
+            }, CancellationToken.None);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (bytes >= 0)
+            {
+                item.CopySize = bytes;
+                _knownSizes[item.Moved.Move.Id] = bytes;
+            }
+
+            UpdateSpaceSummary();
+        }
+    }
+
+    private void UpdateSpaceSummary()
+    {
+        static string PerDrive(IEnumerable<(string Drive, long Bytes)> sizes)
+            => string.Join(", ", sizes.GroupBy(s => s.Drive).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(g => $"{MovePlanner.Bytes(g.Sum(s => s.Bytes))} sur {g.Key}"));
+
+        var freed = Items.Where(i => i.FreesSource && i.CopySize is > 0).Select(i => (i.SourceDrive, i.CopySize!.Value)).ToList();
+        var orphans = Items.Where(i => i.IsOrphanCopy && i.CopySize is > 0).Select(i => (i.DestinationDrive, i.CopySize!.Value)).ToList();
+        var pending = Items.Any(i => i.ShowsSize && i.CopySize is null) ? " (calcul en cours…)" : string.Empty;
+        FreedSummary = freed.Count == 0 ? string.Empty : $"Espace libéré grâce à tes déplacements : {PerDrive(freed)}{pending}";
+        OrphanSummary = orphans.Count == 0 ? string.Empty
+            : $"Copies orphelines : {PerDrive(orphans)}. « Nettoyer la copie… » les supprime.";
     }
 
     private bool HasSelection() => Selected is not null;

@@ -20,6 +20,10 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource PageTitle}" Text="Mes déplacements" />
                 <TextBlock Style="{StaticResource Secondary}" Text="Logiciels déplacés par Déménageur, avec l'état de leur jonction et de leur copie." />
+                <TextBlock Margin="0,6,0,0" FontWeight="SemiBold" Foreground="#3FA33F" Text="{Binding FreedSummary}" TextWrapping="Wrap"
+                           Visibility="{Binding FreedSummary, Converter={StaticResource NotEmptyToVisibility}}" />
+                <TextBlock Margin="0,2,0,0" Foreground="#D86B00" Text="{Binding OrphanSummary}" TextWrapping="Wrap"
+                           Visibility="{Binding OrphanSummary, Converter={StaticResource NotEmptyToVisibility}}" />
             </StackPanel>
         </DockPanel>
 
@@ -56,6 +60,12 @@
                                 <TextBlock Margin="0,2,0,0" Style="{StaticResource Secondary}" Text="{Binding Integrity}" Visibility="{Binding Integrity, Converter={StaticResource NotEmptyToVisibility}}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                                <!--  Taille de la copie : espace libéré (jonction en place) ou occupé par une copie orpheline.  -->
+                                <StackPanel Margin="0,0,20,0" MinWidth="110" VerticalAlignment="Center" Visibility="{Binding ShowsSize, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock x:Name="SizeValue" HorizontalAlignment="Right" FontSize="16" FontWeight="SemiBold" Foreground="#3FA33F"
+                                               Text="{Binding CopySize, Converter={StaticResource Bytes}}" />
+                                    <TextBlock x:Name="SizeCaption" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SizeCaption}" />
+                                </StackPanel>
                                 <TextBlock Margin="0,0,12,0" VerticalAlignment="Center" Style="{StaticResource Secondary}" Text="{Binding Date}" />
                                 <ui:Button Margin="0,0,6,0" Command="{Binding DataContext.OpenSourceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" ToolTip="Ouvrir l'emplacement d'origine">
                                     <ui:Button.Icon>
@@ -69,6 +79,12 @@
                                 </ui:Button>
                             </StackPanel>
                         </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsOrphanCopy}" Value="True">
+                                <Setter TargetName="SizeValue" Property="Foreground" Value="#D86B00" />
+                                <Setter TargetName="SizeCaption" Property="Foreground" Value="#D86B00" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
