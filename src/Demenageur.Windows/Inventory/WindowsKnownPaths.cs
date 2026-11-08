@@ -19,7 +19,7 @@ public sealed class WindowsKnownPaths : IKnownPaths
         ProgramData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
         UsersDirectory = Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)) ?? SystemDrive + @"\Users";
         UserProfiles = RegistryUninstallSource.LoadedUserProfiles();
-        PersonalFolders = UserProfiles.SelectMany(PersonalFoldersOf).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        PersonalFolders = UserProfiles.SelectMany(PersonalFoldersOf).Concat(OneDriveFolders()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public string WindowsDirectory { get; }
@@ -53,21 +53,39 @@ public sealed class WindowsKnownPaths : IKnownPaths
             yield return Path.Combine(profile, name);
         }
 
-        // Dossiers OneDrive (personnel et professionnel) déclarés pour l'utilisateur courant.
-        using var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
-        using var accounts = hkcu.OpenSubKey(@"Software\Microsoft\OneDrive\Accounts");
-        if (accounts is null)
-        {
-            yield break;
-        }
+    }
 
-        foreach (var account in accounts.GetSubKeyNames())
+    /// <summary>
+    /// Dossiers OneDrive (personnel et professionnel) de CHAQUE profil chargé, lus dans HKEY_USERS\&lt;SID&gt; :
+    /// en administrateur, HKCU ne désigne que le compte qui a validé l'UAC, pas les autres utilisateurs.
+    /// </summary>
+    private static List<string> OneDriveFolders()
+    {
+        var folders = new List<string>();
+        using var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+        using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+        var hives = new List<(RegistryKey Root, string Prefix)> { (hkcu, string.Empty) };
+        hives.AddRange(RegistryUninstallSource.LoadedUserSids().Select(sid => (users, sid + @"\")));
+        foreach (var (root, prefix) in hives)
         {
-            using var key = accounts.OpenSubKey(account);
-            if (key?.GetValue("UserFolder") is string folder && !string.IsNullOrWhiteSpace(folder))
+            try
             {
-                yield return folder;
+                using var accounts = root.OpenSubKey(prefix + @"Software\Microsoft\OneDrive\Accounts");
+                foreach (var account in accounts?.GetSubKeyNames() ?? [])
+                {
+                    using var key = accounts!.OpenSubKey(account);
+                    if (key?.GetValue("UserFolder") is string folder && !string.IsNullOrWhiteSpace(folder))
+                    {
+                        folders.Add(folder);
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+            {
+                // Ruche illisible : ignorée (les dossiers standard du profil restent protégés).
             }
         }
+
+        return folders;
     }
 }

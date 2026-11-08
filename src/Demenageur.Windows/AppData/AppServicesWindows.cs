@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using Demenageur.Core.Moving;
@@ -82,7 +84,7 @@ public static class ShellActions
     {
         if (Directory.Exists(folder))
         {
-            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{folder}\"") { UseShellExecute = true })?.Dispose();
+            Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), $"\"{folder}\"") { UseShellExecute = true })?.Dispose();
         }
     }
 }
@@ -124,7 +126,24 @@ public static class ReadmeWriter
             text.AppendLine($"    opération             : {move.Move.Id}");
         }
 
-        File.WriteAllText(Path.Combine(destinationRoot, FileName), text.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        // Le fichier liste des chemins d'origine (donc des noms de profil) : lisible par les administrateurs, SYSTEM et le
+        // compte qui a fait les déplacements, pas par les autres utilisateurs (le dossier racine leur donne la lecture).
+        var path = Path.Combine(destinationRoot, FileName);
+        File.WriteAllText(path, text.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        new FileInfo(path).SetAccessControl(PrivateFileSecurity());
+    }
+
+    private static FileSecurity PrivateFileSecurity()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        var security = new FileSecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        foreach (var sid in new[] { new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), identity.User! }.Distinct())
+        {
+            security.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.FullControl, AccessControlType.Allow));
+        }
+
+        return security;
     }
 }
 
@@ -141,10 +160,36 @@ public static class DemoSoftwareFactory
 
     public static string DestinationRoot(string driveRoot) => Path.Combine(driveRoot, DemoFolderName, "Destination");
 
+    /// <summary>
+    /// Refuse si un élément existant entre la racine du disque et le dossier de démo est une jonction ou un lien :
+    /// tout utilisateur peut créer des dossiers à la racine, et l'app écrit ici en administrateur.
+    /// </summary>
+    private static void RejectLinksOnPath(string driveRoot, string folder)
+    {
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(driveRoot));
+        var relative = Path.GetRelativePath(root, folder);
+        var current = root;
+        foreach (var part in relative.Split(Path.DirectorySeparatorChar))
+        {
+            current = Path.Combine(current, part);
+            var info = new DirectoryInfo(current);
+            if (!info.Exists && !File.Exists(current))
+            {
+                return;
+            }
+
+            if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new InvalidOperationException($"« {current} » est une jonction ou un lien : la démo refuse d'y écrire. Supprime-le ou choisis un autre disque.");
+            }
+        }
+    }
+
     /// <summary>Crée (ou recrée si absent) le logiciel fictif ; renvoie son dossier.</summary>
     public static string Create(string driveRoot)
     {
         var folder = Path.Combine(SourceRoot(driveRoot), SoftwareName);
+        RejectLinksOnPath(driveRoot, folder);
         if (Directory.Exists(folder) || File.Exists(folder))
         {
             return folder;

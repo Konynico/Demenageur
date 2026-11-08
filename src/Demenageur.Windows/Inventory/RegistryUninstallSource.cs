@@ -121,6 +121,13 @@ public sealed partial class RegistryUninstallSource : IUninstallSource
         return profile?.GetValue("ProfileImagePath") is string path ? Environment.ExpandEnvironmentVariables(path) : null;
     }
 
+    /// <summary>SID des utilisateurs dont le profil est chargé (ruche présente sous HKEY_USERS).</summary>
+    public static IReadOnlyList<string> LoadedUserSids()
+    {
+        using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+        return users.GetSubKeyNames().Where(s => UserSidPattern().IsMatch(s)).ToList();
+    }
+
     /// <summary>Profils des utilisateurs actuellement chargés.</summary>
     public static IReadOnlyList<string> LoadedUserProfiles()
     {
