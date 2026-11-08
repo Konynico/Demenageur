@@ -10,6 +10,10 @@
     <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess>
     <!-- App élevée : aucun code ne doit pouvoir être injecté au démarrage via DOTNET_STARTUP_HOOKS. -->
     <StartupHookSupport>false</StartupHookSupport>
+    <!-- Graphe win-x64 toujours restauré : packages.lock.json identique en compilation et en publication. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <!-- Avertit à la compilation de tout code incompatible avec la publication en fichier unique. -->
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     <!-- Release : ni débogueur, ni profileur, ni EventPipe attachables à ce processus élevé (défense en profondeur). -->
     <EnableDiagnostics Condition="'$(Configuration)' == 'Release'">false</EnableDiagnostics>
   </PropertyGroup>
