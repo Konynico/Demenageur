@@ -38,7 +38,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="{Binding Title}" />
+        <ui:TitleBar Grid.Row="0" Title="{Binding Title}">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="{StaticResource LogoImage}" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -49,7 +53,7 @@
             <!--  Navigation  -->
             <DockPanel Grid.Column="0" Margin="8,4,4,12">
                 <StackPanel DockPanel.Dock="Top" Margin="12,4,0,16" Orientation="Horizontal">
-                    <ui:SymbolIcon FontSize="26" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Symbol="ArrowSwap24" />
+                    <Image Width="30" Height="30" Source="{StaticResource LogoImage}" />
                     <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" Text="Déménageur" />
                 </StackPanel>
                 <ListBox ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}" BorderThickness="0" Background="Transparent">

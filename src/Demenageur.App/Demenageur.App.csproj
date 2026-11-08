@@ -6,6 +6,7 @@
     <RootNamespace>Demenageur.App</RootNamespace>
     <AssemblyName>Demenageur</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Demenageur.ico</ApplicationIcon>
     <BanDirectFileSystemAccess>true</BanDirectFileSystemAccess>
     <!-- App élevée : aucun code ne doit pouvoir être injecté au démarrage via DOTNET_STARTUP_HOOKS. -->
     <StartupHookSupport>false</StartupHookSupport>

@@ -13,6 +13,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
+                <ResourceDictionary Source="Assets/Logo.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <app:BytesConverter x:Key="Bytes" />
             <app:BoolToVisibilityConverter x:Key="BoolToVisibility" />

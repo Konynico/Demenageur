@@ -16,7 +16,11 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ui:TitleBar Grid.Row="0" Title="Démo sans risque" ShowMaximize="False" ShowMinimize="False" />
+        <ui:TitleBar Grid.Row="0" Title="Démo sans risque" ShowMaximize="False" ShowMinimize="False">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="{StaticResource LogoImage}" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
         <StackPanel Grid.Row="1" Margin="24,4,24,8">
             <TextBlock FontSize="18" FontWeight="SemiBold" Text="Déplacer un logiciel fictif" />
             <TextBlock Margin="0,8,0,12" Style="{StaticResource Paragraph}"

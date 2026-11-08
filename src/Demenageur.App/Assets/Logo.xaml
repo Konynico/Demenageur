@@ -1,0 +1,48 @@
+<!--  Logo de Déménageur (source vectorielle unique) : dossier jaune + pastille bleue avec flèche.
+      Assets\Demenageur.ico en est le rendu en 16 à 256 px.  -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DrawingImage x:Key="LogoImage">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!--  Cadre 256 × 256 transparent : garde les marges du logo.  -->
+                <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 256 V 256 H 0 Z" />
+                <!--  Dos du dossier, avec l'onglet  -->
+                <GeometryDrawing Brush="#E3A21A" Geometry="M 20 66 A 14 14 0 0 1 34 52 H 96 L 118 74 H 206 A 14 14 0 0 1 220 88 V 200 A 14 14 0 0 1 206 214 H 34 A 14 14 0 0 1 20 200 Z" />
+                <!--  Face avant  -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0" Color="#FFD978" />
+                            <GradientStop Offset="1" Color="#F4B220" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry RadiusX="14" RadiusY="14" Rect="20,92,200,122" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!--  Pastille bleue cerclée de blanc  -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Offset="0" Color="#4CC2FF" />
+                            <GradientStop Offset="1" Color="#0F6CBD" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="7" />
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="192,190" RadiusX="50.5" RadiusY="50.5" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!--  Flèche  -->
+                <GeometryDrawing Geometry="M 164 190 H 214 M 194 168 L 216 190 L 194 212">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="15" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>
