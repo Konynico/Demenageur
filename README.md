@@ -81,6 +81,12 @@ administrateurs et le compte qui les a déplacés). Pour effacer : Paramètres �
 terminées… » (les journaux des logiciels encore déplacés sont conservés), ou `installer.ps1 -Desinstaller -SupprimerDonnees`.
 Ces fichiers ne sont pas chiffrés par Déménageur : BitLocker protège le disque si besoin.
 
+## Licence
+
+Déménageur est distribué sous licence [MIT](LICENSE) : tu peux l'utiliser, le modifier et le redistribuer librement,
+y compris l'exécutable, à condition de conserver l'avis de licence. Il est fourni « tel quel », **sans aucune garantie** :
+l'auteur n'est pas responsable des conséquences de son utilisation.
+
 ## Composants tiers
 
 WPF-UI et CommunityToolkit.Mvvm (MIT), Serilog (Apache-2.0), .NET et Microsoft.Extensions (MIT). Les licences complètes

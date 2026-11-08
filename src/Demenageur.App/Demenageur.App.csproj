@@ -45,6 +45,7 @@
   <!-- Licences des composants tiers : livrées à côté de l'exe (pas dans le fichier unique). -->
   <ItemGroup>
     <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <ItemGroup>
