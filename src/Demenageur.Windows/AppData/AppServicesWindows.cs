@@ -22,6 +22,12 @@ public sealed class AppSettings
 
     /// <summary>Nom du dossier racine de destination sur chaque disque.</summary>
     public string DestinationFolderName { get; set; } = Core.Safety.DestinationContainer.DefaultFolderName;
+
+    /// <summary>Dossiers exclus à la main : jamais déplacés (règle R-EXCLU).</summary>
+    public List<Core.Safety.UserExclusion> Exclusions { get; set; } = [];
+
+    /// <summary>Masquer de la liste les jeux gérés par un lanceur qui sait les déplacer lui-même.</summary>
+    public bool HideLauncherManaged { get; set; }
 }
 
 /// <summary>Lecture/écriture des réglages (JSON dans le dossier de données protégé).</summary>

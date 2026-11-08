@@ -16,6 +16,9 @@
     <DefineConstants>$(DefineConstants);APERCU</DefineConstants>
     <ApplicationManifest>app.apercu.manifest</ApplicationManifest>
     <AssemblyName>Demenageur-Apercu</AssemblyName>
+    <!-- Fichiers intermédiaires séparés : sinon le XAML compilé de la version normale (assemblage « Demenageur ») est réutilisé et l'aperçu plante au démarrage. -->
+    <IntermediateOutputPath>obj\apercu\$(Configuration)\</IntermediateOutputPath>
+    <OutputPath>bin\apercu\$(Configuration)\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +17,9 @@ public enum SoftwareStatus
     Blocked,
     AlreadyMoved,
     UnknownFolder,
+
+    /// <summary>Géré par un lanceur qui sait le déplacer lui-même (Steam, Xbox) : à préférer.</summary>
+    UseLauncher,
 }
 
 /// <summary>Ligne de la liste des logiciels.</summary>
@@ -54,7 +57,13 @@ public sealed partial class SoftwareItemViewModel : ObservableObject
     private SoftwareStatus status = SoftwareStatus.Movable;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LauncherText), nameof(IsLauncherManaged))]
     private IReadOnlyList<RuleVerdict> verdicts = [];
+
+    /// <summary>« Géré par Steam », « Géré par Epic Games »… (vide sinon).</summary>
+    public string LauncherText => Verdicts.FirstOrDefault(v => v.RuleId == SafetyRules.LauncherRuleId)?.Title ?? string.Empty;
+
+    public bool IsLauncherManaged => LauncherText.Length > 0;
 
     public string StatusText => Status switch
     {
@@ -62,6 +71,7 @@ public sealed partial class SoftwareItemViewModel : ObservableObject
         SoftwareStatus.NeedsConfirmation => "Confirmation requise",
         SoftwareStatus.Blocked => "Bloqué",
         SoftwareStatus.AlreadyMoved => "Déjà déplacé",
+        SoftwareStatus.UseLauncher => "Via son lanceur",
         _ => "Dossier inconnu",
     };
 
@@ -83,6 +93,7 @@ public sealed partial class SoftwareListViewModel : ObservableObject
         View.Filter = Filter;
         View.SortDescriptions.Add(new SortDescription(nameof(SoftwareItemViewModel.SizeSortKey), ListSortDirection.Descending));
         showHidden = engine.Settings.ShowHiddenEntries;
+        hideLauncherManaged = engine.Settings.HideLauncherManaged;
     }
 
     public event Func<Task>? RefreshDrivesRequested;
@@ -99,6 +110,16 @@ public sealed partial class SoftwareListViewModel : ObservableObject
 
     [ObservableProperty]
     private bool onlyMovable;
+
+    /// <summary>Masquer les jeux gérés par un lanceur (Steam, Epic, Xbox…).</summary>
+    [ObservableProperty]
+    private bool hideLauncherManaged;
+
+    partial void OnHideLauncherManagedChanged(bool value)
+    {
+        _engine.Settings.HideLauncherManaged = value;
+        View.Refresh();
+    }
 
     /// <summary>Filtre par disque (« Tous les disques » ou une lettre). Par défaut : le disque de Windows, celui qu'on veut libérer.</summary>
     public ObservableCollection<string> DriveFilters { get; } = [AllDrives];
@@ -117,7 +138,7 @@ public sealed partial class SoftwareListViewModel : ObservableObject
     private string loadingText = string.Empty;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(MoveSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(MoveSelectedCommand), nameof(ExcludeSelectedCommand))]
     private SoftwareItemViewModel? selected;
 
     partial void OnSearchTextChanged(string value) => View.Refresh();
@@ -139,6 +160,11 @@ public sealed partial class SoftwareListViewModel : ObservableObject
         }
 
         if (OnlyMovable && software.Status is not (SoftwareStatus.Movable or SoftwareStatus.NeedsConfirmation))
+        {
+            return false;
+        }
+
+        if (HideLauncherManaged && software.IsLauncherManaged)
         {
             return false;
         }
@@ -237,6 +263,7 @@ public sealed partial class SoftwareListViewModel : ObservableObject
 
             var verdicts = rules.Evaluate(new MoveCandidate(software.Folder.Path, software.DisplayName, software.Publisher, software.Entries, software.Folder.Source), system, catalog);
             var status = verdicts.Any(v => v.Level == RuleLevel.Block) ? SoftwareStatus.Blocked
+                : verdicts.Any(v => v.RuleId == SafetyRules.LauncherRuleId && v.Level == RuleLevel.Confirm) ? SoftwareStatus.UseLauncher
                 : verdicts.Any(v => v.Level == RuleLevel.Confirm) ? SoftwareStatus.NeedsConfirmation
                 : SoftwareStatus.Movable;
             return (status, verdicts);
@@ -276,7 +303,22 @@ public sealed partial class SoftwareListViewModel : ObservableObject
         View.Refresh();
     }
 
-    private bool CanMoveSelected() => Selected is { Status: SoftwareStatus.Movable or SoftwareStatus.NeedsConfirmation };
+    private bool CanMoveSelected() => Selected is { Status: SoftwareStatus.Movable or SoftwareStatus.NeedsConfirmation or SoftwareStatus.UseLauncher };
+
+    private bool HasFolder() => Selected?.Software.Folder.Path is not null;
+
+    /// <summary>Ajoute le dossier du logiciel sélectionné aux exclusions (réversible dans Paramètres).</summary>
+    [RelayCommand(CanExecute = nameof(HasFolder))]
+    private async Task ExcludeSelectedAsync()
+    {
+        if (Selected?.Software.Folder.Path is not { } path)
+        {
+            return;
+        }
+
+        _engine.AddExclusion(path, Selected.Name);
+        await LoadAsync();
+    }
 
     [RelayCommand(CanExecute = nameof(CanMoveSelected))]
     private async Task MoveSelectedAsync()

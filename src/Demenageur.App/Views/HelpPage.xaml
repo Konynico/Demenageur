@@ -80,6 +80,12 @@
             <TextBlock Style="{StaticResource Paragraph}" Text="• Logiciels qui cherchent un dossier voisin par un chemin relatif (..\), DRM ou anti-triche qui vérifient leur emplacement, applications UIAccess ou règles AppLocker exigeant Program Files : ils peuvent refuser de fonctionner depuis un autre disque." />
             <TextBlock Style="{StaticResource Paragraph}" Text="• Restauration du système et mises à niveau majeures de Windows : annule d'abord les déplacements. Un point de restauration ne sauvegarde pas les fichiers des logiciels." />
 
+            <TextBlock Style="{StaticResource SectionTitle}" Text="Jeux installés par un lanceur (Steam, Epic, Xbox…)" />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Déménageur repère les bibliothèques de Steam, Epic Games, GOG Galaxy, Ubisoft Connect et de l'application Xbox, et reconnaît les jeux Battle.net, EA, Riot et Rockstar d'après leur désinstalleur. Chaque jeu concerné est marqué dans la liste, avec la méthode propre à son lanceur." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Steam et l'application Xbox savent déplacer leurs jeux eux-mêmes : préfère leur bouton « Déplacer » (statut « Via son lanceur »). Avec Déménageur, il faut confirmer en tapant le nom, car leurs mises à jour se préparent sur le disque d'origine." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="• Les autres n'ont pas de bouton « Déplacer » : la jonction de Déménageur est alors une bonne solution (simple avertissement)." />
+            <TextBlock Style="{StaticResource Paragraph}" Text="Pour qu'un dossier ne soit jamais déplacé, utilise « Exclure » dans la liste ou la section « Dossiers exclus » des Paramètres. La case « Masquer les jeux des lanceurs » allège la liste." />
+
             <TextBlock Style="{StaticResource SectionTitle}" Text="Désinstaller ou mettre à jour un logiciel déplacé" />
             <TextBlock Style="{StaticResource Paragraph}" Text="• Mise à jour qui écrit dans le dossier du logiciel (le cas le plus courant) : les nouveaux fichiers passent par la jonction et arrivent directement sur l'autre disque. Rien à faire." />
             <TextBlock Style="{StaticResource Paragraph}" Text="• Désinstallation : le désinstalleur supprime les fichiers qu'il connaît (à travers la jonction, donc sur l'autre disque), puis souvent la jonction elle-même. Ce qu'il oublie (journaux, extensions, caches) reste dans la copie. « Mes déplacements » l'indique « Désinstallé » : utilise « Nettoyer la copie… » pour supprimer ces restes." />

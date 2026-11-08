@@ -253,9 +253,14 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly Engine _engine;
 
-    public SettingsViewModel(Engine engine)
+    private readonly IWindowService _windows;
+
+    public SettingsViewModel(Engine engine, IWindowService windows)
     {
         _engine = engine;
+        _windows = windows;
+        RefreshExclusions();
+        engine.ExclusionsChanged += () => System.Windows.Application.Current?.Dispatcher.Invoke(RefreshExclusions);
         simulationOnly = engine.Settings.SimulationOnly;
         restorePointByDefault = engine.Settings.RestorePointByDefault;
         destinationFolderName = engine.Settings.DestinationFolderName;
@@ -311,6 +316,75 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenDataFolder() => ShellActions.OpenFolder(_engine.Data.DataRoot);
+
+    // ── Exclusions manuelles ──
+
+    public ObservableCollection<UserExclusion> Exclusions { get; } = [];
+
+    private void RefreshExclusions()
+    {
+        Exclusions.Clear();
+        foreach (var exclusion in _engine.Settings.Exclusions.OrderBy(x => x.Path, StringComparer.CurrentCultureIgnoreCase))
+        {
+            Exclusions.Add(exclusion);
+        }
+    }
+
+    [RelayCommand]
+    private void AddExclusion()
+    {
+        if (_windows.PickFolder("Dossier à ne jamais déplacer (lui et tout ce qu'il contient)") is { } folder)
+        {
+            _engine.AddExclusion(folder, null);
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveExclusion(UserExclusion? exclusion)
+    {
+        if (exclusion is not null)
+        {
+            _engine.RemoveExclusion(exclusion);
+        }
+    }
+
+    // ── Lanceurs détectés ──
+
+    public ObservableCollection<string> DetectedLaunchers { get; } = [];
+
+    [ObservableProperty]
+    private string launchersStatus = "Clique sur « Analyser » pour lister les bibliothèques de jeux trouvées.";
+
+    [RelayCommand]
+    private async Task ScanLaunchersAsync()
+    {
+        LaunchersStatus = "Analyse en cours…";
+        var locations = await Task.Run(() =>
+        {
+            _engine.RefreshSystem();
+            return _engine.System.LauncherLocations;
+        });
+        DetectedLaunchers.Clear();
+        foreach (var group in locations.GroupBy(l => l.LauncherId))
+        {
+            var launcher = KnownLaunchers.Get(group.Key);
+            var support = launcher?.Support switch
+            {
+                LauncherMoveSupport.NativeMove => "sait déplacer ses jeux",
+                LauncherMoveSupport.Relocate => "sait retrouver un jeu copié ailleurs",
+                _ => "pas de déplacement documenté",
+            };
+            DetectedLaunchers.Add($"{launcher?.Name ?? group.Key} ({support}) :");
+            foreach (var location in group.OrderBy(l => l.Path, StringComparer.CurrentCultureIgnoreCase))
+            {
+                DetectedLaunchers.Add($"    {location.Path}" + (location.Title is { } title && !location.Path.EndsWith(title, StringComparison.OrdinalIgnoreCase) ? $"  ({title})" : string.Empty));
+            }
+        }
+
+        LaunchersStatus = locations.Count == 0
+            ? "Aucune bibliothèque trouvée."
+            : $"{locations.Count} emplacement(s) trouvé(s). Battle.net, EA, Riot et Rockstar sont reconnus d'après les logiciels installés.";
+    }
 }
 
 /// <summary>Fenêtres et boîtes de dialogue (implémenté par l'application).</summary>

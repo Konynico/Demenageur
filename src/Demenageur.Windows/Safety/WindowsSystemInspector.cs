@@ -26,6 +26,7 @@ public sealed partial class WindowsSystemInspector : ISystemInspector
         ComServers = Safe(ReadComServers),
         ScheduledTasks = Safe(ReadScheduledTasks),
         PendingRenames = Safe(ReadPendingRenames),
+        LauncherLocations = Safe(LauncherInspector.ReadAll),
     };
 
     private static IReadOnlyList<T> Safe<T>(Func<IReadOnlyList<T>> read)

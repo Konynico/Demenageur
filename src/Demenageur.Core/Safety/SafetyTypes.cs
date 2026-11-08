@@ -81,7 +81,16 @@ public sealed record SystemSnapshot
 
     /// <summary>Chemins concernés par des renommages en attente de redémarrage.</summary>
     public IReadOnlyList<string> PendingRenames { get; init; } = [];
+
+    /// <summary>Bibliothèques et dossiers de jeux gérés par un lanceur (Steam, Epic, Xbox…).</summary>
+    public IReadOnlyList<ManagedLocation> LauncherLocations { get; init; } = [];
+
+    /// <summary>Dossiers exclus à la main par l'utilisateur (Paramètres).</summary>
+    public IReadOnlyList<UserExclusion> UserExclusions { get; init; } = [];
 }
+
+/// <summary>Dossier que l'utilisateur ne veut jamais déplacer avec Déménageur (lui et tout ce qu'il contient).</summary>
+public sealed record UserExclusion(string Path, string? Note = null);
 
 /// <summary>Lecture de l'état système (implémentée par Demenageur.Windows, simulée dans les tests).</summary>
 public interface ISystemInspector

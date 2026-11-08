@@ -41,6 +41,15 @@ Toute erreur avant le point de non-retour ramène automatiquement à l'état ini
 courant, l'opération est reprise au lancement suivant. « Mes déplacements » permet d'annuler un déplacement : la copie
 est rapatriée à l'emplacement d'origine, avec les mêmes vérifications.
 
+**Jeux des lanceurs.** Déménageur lit, en lecture seule, ce que chaque lanceur publie :
+- **Steam** : `libraryfolders.vdf` ;
+- **Epic Games** : ses manifestes ;
+- **GOG Galaxy** et **Ubisoft Connect** : le registre ;
+- **application Xbox** : le fichier `.GamingRoot` ;
+- **Battle.net, EA, Riot et Rockstar** : leur désinstalleur.
+
+Un jeu géré par Steam ou par l'application Xbox, qui savent le déplacer eux-mêmes, passe au statut « Via son lanceur » ; le déplacer avec Déménageur demande alors de taper son nom. Les autres lanceurs déclenchent un simple avertissement, avec leur procédure. Les dossiers exclus à la main (bouton « Exclure » ou Paramètres) sont bloqués.
+
 **Désinstallation et mises à jour.** Un désinstalleur supprime les fichiers qu'il connaît à travers la jonction, puis
 souvent la jonction elle-même. Certaines mises à jour, elles, recréent un vrai dossier à l'origine. Dans les deux cas,
 une copie orpheline reste sur le disque cible. Elle est signalée au démarrage et dans « Mes déplacements »

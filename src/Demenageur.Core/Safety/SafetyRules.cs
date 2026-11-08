@@ -135,6 +135,12 @@ public sealed class SafetyRules
             Add(verdicts, "R-APP", RuleLevel.Block, "Déménageur lui-même", "Déménageur ne se déplace pas lui-même, ni ses données.");
         }
 
+        foreach (var exclusion in system.UserExclusions.Where(x => IsWithin(x.Path) || IsOrContains(x.Path)))
+        {
+            Add(verdicts, "R-EXCLU", RuleLevel.Block, "Exclu par toi",
+                $"« {exclusion.Path} » est dans ta liste d'exclusions (Paramètres)" + (string.IsNullOrWhiteSpace(exclusion.Note) ? "." : $" : {exclusion.Note}"));
+        }
+
         if (system.PendingRenames.Any(p => Inside(p) || PathUtil.IsWithinIgnoreCase(folder, p)))
         {
             Add(verdicts, "R-REDEMARRAGE", RuleLevel.Block, "Redémarrage en attente", "Une installation ou mise à jour attend un redémarrage pour remplacer des fichiers de ce dossier. Redémarre l'ordinateur d'abord.");
@@ -146,6 +152,21 @@ public sealed class SafetyRules
         {
             Add(verdicts, "R-AUTRES-LOGICIELS", RuleLevel.Block, "Dossier partagé avec d'autres logiciels",
                 "Ce dossier contient aussi : " + string.Join(", ", nested.Select(s => s.DisplayName).Take(8)) + (nested.Count > 8 ? "…" : string.Empty) + ". Déplace plutôt chaque logiciel séparément.");
+        }
+
+        // ─── Lanceurs de jeux (Steam, Xbox, Epic…) ───
+        if (FindLauncher(candidate, system, IsWithin) is { } managed)
+        {
+            var (launcher, title) = managed;
+            var subject = title is null ? "Ce dossier" : $"« {title} »";
+            Add(verdicts, LauncherRuleId, launcher.Support == LauncherMoveSupport.NativeMove ? RuleLevel.Confirm : RuleLevel.Warning,
+                $"Géré par {launcher.Name}", $"{subject} est installé par {launcher.Name}. {launcher.Advice}");
+        }
+
+        foreach (var library in system.LauncherLocations.Where(l => !IsWithin(l.Path) && IsOrContains(l.Path)).Select(l => KnownLaunchers.Get(l.LauncherId)).OfType<Launcher>().Distinct())
+        {
+            Add(verdicts, LauncherRuleId, library.Support == LauncherMoveSupport.NativeMove ? RuleLevel.Confirm : RuleLevel.Warning,
+                $"Contient des jeux {library.Name}", $"Ce dossier contient des jeux gérés par {library.Name}. {library.Advice}");
         }
 
         // ─── Confirmation renforcée ───
@@ -203,6 +224,29 @@ public sealed class SafetyRules
         }
 
         return verdicts;
+    }
+
+    /// <summary>Identifiant de la règle « géré par un lanceur » (utilisé par la liste pour afficher le lanceur).</summary>
+    public const string LauncherRuleId = "R-LANCEUR";
+
+    /// <summary>
+    /// Lanceur qui gère ce dossier : d'abord par emplacement (le plus précis l'emporte : un jeu GOG dans le dossier racine
+    /// Xbox reste un jeu GOG), sinon d'après les entrées de désinstallation.
+    /// </summary>
+    private static (Launcher Launcher, string? Title)? FindLauncher(MoveCandidate candidate, SystemSnapshot system, Func<string, bool> isWithin)
+    {
+        var location = system.LauncherLocations
+            .Where(l => isWithin(l.Path))
+            .OrderByDescending(l => l.Path.Length)
+            .FirstOrDefault();
+        if (location is not null && KnownLaunchers.Get(location.LauncherId) is { } byLocation)
+        {
+            return (byLocation, location.Title);
+        }
+
+        return candidate.Entries.Select(LauncherDetection.FromUninstallEntry).OfType<Launcher>().FirstOrDefault() is { } byEntry
+            ? (byEntry, null)
+            : null;
     }
 
     private bool IsKnownRootFolder(string path)

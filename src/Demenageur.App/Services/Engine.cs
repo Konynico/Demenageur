@@ -80,15 +80,48 @@ public sealed class Engine
 
     public void SaveSettings() => SettingsStore.Save(Settings);
 
-    /// <summary>État système (services, sécurité, COM…), lu une fois puis gardé en cache.</summary>
+    /// <summary>
+    /// État système (services, sécurité, COM, lanceurs…), lu une fois puis gardé en cache ;
+    /// les exclusions de l'utilisateur, elles, sont toujours celles des réglages actuels.
+    /// </summary>
     public SystemSnapshot System
     {
         get
         {
             lock (_systemLock)
             {
-                return _system ??= new WindowsSystemInspector().Capture();
+                _system ??= new WindowsSystemInspector().Capture();
+                return _system with { UserExclusions = Settings.Exclusions.ToList() };
             }
+        }
+    }
+
+    /// <summary>Ajoute un dossier aux exclusions (sans doublon) et enregistre les réglages.</summary>
+    public void AddExclusion(string path, string? note)
+    {
+        var normalized = Path.TrimEndingDirectorySeparator(path.Trim());
+        if (!Settings.Exclusions.Any(x => string.Equals(x.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            Settings.Exclusions.Add(new UserExclusion(normalized, string.IsNullOrWhiteSpace(note) ? null : note.Trim()));
+            SaveIfReal();
+        }
+    }
+
+    public void RemoveExclusion(UserExclusion exclusion)
+    {
+        Settings.Exclusions.RemoveAll(x => string.Equals(x.Path, exclusion.Path, StringComparison.OrdinalIgnoreCase));
+        SaveIfReal();
+    }
+
+    /// <summary>La liste des exclusions a changé (pour rafraîchir les pages qui l'affichent).</summary>
+    public event Action? ExclusionsChanged;
+
+    private void SaveIfReal()
+    {
+        ExclusionsChanged?.Invoke();
+        if (!IsPreview)
+        {
+            SaveSettings();
         }
     }
 

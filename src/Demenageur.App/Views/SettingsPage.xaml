@@ -31,6 +31,44 @@
 
             <ui:Card Margin="0,8,0,0">
                 <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Dossiers exclus" />
+                    <TextBlock Margin="0,4,0,6" Style="{StaticResource Secondary}" TextWrapping="Wrap"
+                               Text="Déménageur refuse de déplacer ces dossiers et tout ce qu'ils contiennent. Ajoute-en ici, ou avec le bouton « Exclure » de la liste des logiciels. Enregistré immédiatement." />
+                    <ItemsControl ItemsSource="{Binding Exclusions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,2">
+                                    <ui:Button DockPanel.Dock="Right" Command="{Binding DataContext.RemoveExclusionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                               CommandParameter="{Binding}" ToolTip="Retirer de la liste">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Dismiss24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{Binding Note}" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ui:Button Margin="0,6,0,0" HorizontalAlignment="Left" Command="{Binding AddExclusionCommand}" Content="Ajouter un dossier…" />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Lanceurs de jeux détectés" />
+                    <TextBlock Margin="0,4,0,6" Style="{StaticResource Secondary}" TextWrapping="Wrap"
+                               Text="Les jeux de ces bibliothèques sont signalés dans la liste. Steam et l'application Xbox savent déplacer leurs jeux eux-mêmes : c'est la méthode à préférer." />
+                    <ItemsControl FontFamily="Consolas" FontSize="12" ItemsSource="{Binding DetectedLaunchers}" />
+                    <TextBlock Margin="0,4,0,6" Style="{StaticResource Secondary}" Text="{Binding LaunchersStatus}" TextWrapping="Wrap" />
+                    <ui:Button HorizontalAlignment="Left" Command="{Binding ScanLaunchersCommand}" Content="Analyser" />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
                     <TextBlock FontWeight="SemiBold" Text="Données de l'application" />
                     <TextBlock Margin="0,4,0,6" Style="{StaticResource Secondary}" Text="{Binding DataFolder}" />
                     <ui:Button HorizontalAlignment="Left" Command="{Binding OpenDataFolderCommand}" Content="Ouvrir le dossier" />
