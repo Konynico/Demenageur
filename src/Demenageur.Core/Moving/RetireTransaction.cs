@@ -104,9 +104,11 @@ public sealed class RetireTransaction
 
         var facts = new RetireFacts(source, destination, retiring, request.DestinationIdentity, request.RemoveActiveJunction);
         FsEntryInfo? junction = null;
-        _context.Hooks.EnterCriticalSection();
         try
         {
+            // Dans le try : si l'entrée échoue (service non arrêtable, logiciel encore ouvert…), rollback et sortie propres.
+            _context.Hooks.EnterCriticalSection();
+
             // ── 1) Vérifications ──
             Report(RetireSteps.Checks);
             var atSource = fs.GetEntry(source);

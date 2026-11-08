@@ -95,9 +95,11 @@ public sealed class UndoTransaction
         Manifest? manifest = null;
         void Report(string step, TransferProgress? transfer = null) => progress?.Invoke(new OperationProgress(step, transfer));
 
-        _context.Hooks.EnterCriticalSection();
         try
         {
+            // Dans le try : si l'entrée échoue (service non arrêtable, logiciel encore ouvert…), rollback et sortie propres.
+            _context.Hooks.EnterCriticalSection();
+
             // ── 1) Vérifications ──
             var junction = fs.GetEntry(source);
             if (junction is not { Kind: FsEntryKind.Link } || !MoveProcedures.IsJunctionTo(fs, source, junction.Identity, destination))

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -64,64 +65,106 @@ public sealed class WindowsMoveHooks : IMoveHooks
     public void EnterCriticalSection()
     {
         SetThreadExecutionState(EsContinuous | EsSystemRequired);
-
-        foreach (var name in _options.ServicesToStop)
+        try
         {
-            using var service = new ServiceController(name);
-            if (service.Status is ServiceControllerStatus.Running or ServiceControllerStatus.StartPending)
+            foreach (var name in _options.ServicesToStop)
             {
-                service.Stop();
-                service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
-                _stoppedServices.Add(name);
+                using var service = new ServiceController(name);
+                if (service.Status is ServiceControllerStatus.Running or ServiceControllerStatus.StartPending)
+                {
+                    service.Stop();
+                    _stoppedServices.Add(name); // avant l'attente : redémarré même s'il ne s'arrête pas dans les temps
+                    service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
+                }
+            }
+
+            if (_options.StopExplorer && _options.ExecutableFiles.Count > 0)
+            {
+                // Restart Manager ferme DE FORCE tout ce qui utilise ces fichiers : on ne l'autorise que si l'Explorateur
+                // est le seul concerné. Un logiciel relancé depuis la simulation n'est jamais tué sans sauvegarde.
+                var others = _processes.FindUsers([], _options.ExecutableFiles).Where(u => !u.IsExplorer).ToList();
+                if (others.Count > 0)
+                {
+                    throw new OperationAbortedException("Le logiciel est encore utilisé : "
+                        + string.Join(", ", others.Select(o => $"{o.Name} (PID {o.ProcessId})")) + ". Ferme-le puis recommence. Rien n'a été modifié.");
+                }
+
+                File.WriteAllText(_explorerFlagFile, DateTimeOffset.Now.ToString("O"));
+                _explorer = RestartManagerProcessInspector.ShutdownApplicationsUsing(_options.ExecutableFiles);
             }
         }
-
-        if (_options.StopExplorer && _options.ExecutableFiles.Count > 0)
+        catch
         {
-            File.WriteAllText(_explorerFlagFile, DateTimeOffset.Now.ToString("O"));
-            _explorer = RestartManagerProcessInspector.ShutdownApplicationsUsing(_options.ExecutableFiles);
+            LeaveCriticalSection(); // remet en marche ce qui a déjà été arrêté
+            throw;
         }
     }
 
+    /// <summary>
+    /// Sortie de section critique : peut être appelée plusieurs fois, et ne lève jamais d'exception — chaque étape
+    /// (Explorateur, services, anti-veille) est tentée même si la précédente échoue.
+    /// </summary>
     public void LeaveCriticalSection()
     {
         try
         {
-            if (_explorer is not null)
-            {
-                _explorer.Dispose();
-                _explorer = null;
-                var restarted = EnsureExplorerRunning(out var detail);
-                ExplorerRestartDetail = detail;
-                if (restarted)
-                {
-                    File.Delete(_explorerFlagFile);
-                }
-                else
-                {
-                    // Fichier témoin conservé : nouvel essai au prochain démarrage de Déménageur.
-                    ExplorerWarning = ExplorerRestartAdvice;
-                }
-            }
-
+            RestoreExplorer();
+        }
+        catch (Exception ex) when (ex is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            ExplorerRestartDetail = "relance impossible : " + ex.Message;
+            ExplorerWarning = ExplorerRestartAdvice;
+        }
+        finally
+        {
             foreach (var name in _stoppedServices)
             {
                 try
                 {
                     using var service = new ServiceController(name);
-                    service.Start();
+                    if (service.Status is ServiceControllerStatus.Stopped or ServiceControllerStatus.StopPending)
+                    {
+                        service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                        service.Start();
+                    }
                 }
-                catch (InvalidOperationException)
+                catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or System.ServiceProcess.TimeoutException)
                 {
                     // Le service ne redémarre pas : signalé par le bilan de santé ; on continue.
                 }
             }
 
             _stoppedServices.Clear();
+            SetThreadExecutionState(EsContinuous);
+        }
+    }
+
+    private void RestoreExplorer()
+    {
+        if (_explorer is null)
+        {
+            return;
+        }
+
+        var token = _explorer;
+        _explorer = null;
+        try
+        {
+            token.Dispose();
         }
         finally
         {
-            SetThreadExecutionState(EsContinuous);
+            var restarted = EnsureExplorerRunning(out var detail);
+            ExplorerRestartDetail = detail;
+            if (restarted)
+            {
+                File.Delete(_explorerFlagFile);
+            }
+            else
+            {
+                // Fichier témoin conservé : nouvel essai au prochain démarrage de Déménageur.
+                ExplorerWarning = ExplorerRestartAdvice;
+            }
         }
     }
 

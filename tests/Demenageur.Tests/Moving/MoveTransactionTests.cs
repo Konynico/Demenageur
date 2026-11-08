@@ -107,6 +107,33 @@ public sealed class MoveTransactionTests
     }
 
     [Fact]
+    public void A_failure_when_entering_the_critical_section_rolls_back_and_releases_everything()
+    {
+        using var scenario = new MoveScenario();
+        var hooks = new FailingEnterHooks();
+        scenario.Hooks = hooks;
+
+        var move = scenario.Move();
+
+        Assert.Equal(OperationOutcome.RolledBack, move.Outcome);
+        Assert.Contains("service ne s'arrête pas", move.Message, StringComparison.Ordinal);
+        Assert.True(hooks.Left);
+        Assert.Equal(ObservedState.InPlace, scenario.AssertInvariant(scenario.OriginalHash));
+        Assert.Empty(scenario.PendingOperations());
+
+        // Même règle pour l'annulation : rien ne bouge, la section critique est quittée.
+        scenario.Hooks = NoMoveHooks.Instance;
+        var done = scenario.Move();
+        Assert.True(done.Succeeded);
+        hooks.Left = false;
+        scenario.Hooks = hooks;
+        var undo = scenario.Undo(done.OperationId);
+        Assert.Equal(OperationOutcome.RolledBack, undo.Outcome);
+        Assert.True(hooks.Left);
+        Assert.Equal(ObservedState.Moved, scenario.AssertInvariant(scenario.OriginalHash));
+    }
+
+    [Fact]
     public void An_existing_destination_is_never_touched()
     {
         using var scenario = new MoveScenario();
@@ -251,6 +278,17 @@ public sealed class MoveTransactionTests
         var context = scenario.Context(scenario.Sandbox.RawFs);
         var service = new RecoveryService(new MoveEngineContext { FileSystem = context.FileSystem, ScopeFactory = context.ScopeFactory, Store = strict, Retry = RetryPolicy.None });
         Assert.Equal(OperationOutcome.NeedsAttention, service.Recover(operation).Outcome);
+    }
+
+    private sealed class FailingEnterHooks : IMoveHooks
+    {
+        public bool Left { get; set; }
+
+        public string? CheckBeforeLock(string folderToLock) => null;
+
+        public void EnterCriticalSection() => throw new OperationAbortedException("Le service ne s'arrête pas.");
+
+        public void LeaveCriticalSection() => Left = true;
     }
 
     private sealed class RefusingHooks(string reason) : IMoveHooks

@@ -63,9 +63,11 @@ public sealed class MoveTransaction
         Manifest? manifest = null;
         void Report(string step, TransferProgress? transfer = null) => progress?.Invoke(new OperationProgress(step, transfer));
 
-        _context.Hooks.EnterCriticalSection();
         try
         {
+            // Dans le try : si l'entrée échoue (service non arrêtable, logiciel encore ouvert…), rollback et sortie propres.
+            _context.Hooks.EnterCriticalSection();
+
             // ── Préconditions (revérifiées au dernier moment) ──
             var sourceInfo = fs.GetEntry(source) ?? throw new OperationAbortedException($"« {source} » est introuvable.");
             if (sourceInfo.Kind != FsEntryKind.Directory)
