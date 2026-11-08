@@ -164,7 +164,25 @@ public partial class App : Application
                     viewModel.StartupMessages.Add(explorerAdvice);
                 }
 
-                var recovered = await Task.Run(engine.RecoverPending);
+                // Reprise : peut durer (suppression de milliers de fichiers) → petite fenêtre pour ne pas laisser l'écran vide après l'UAC.
+                RecoveryWindow? recoveryWindow = null;
+                if ((await Task.Run(engine.PendingOperations)).Count > 0)
+                {
+                    recoveryWindow = new RecoveryWindow();
+                    recoveryWindow.Show();
+                }
+
+                IReadOnlyList<(StoredOperation Operation, OperationResult Result)> recovered;
+                try
+                {
+                    recovered = await Task.Run(() => engine.RecoverPending(operation =>
+                        recoveryWindow?.Dispatcher.BeginInvoke(() => recoveryWindow.ShowSoftware(operation.SoftwareName))));
+                }
+                finally
+                {
+                    recoveryWindow?.Finish();
+                }
+
                 foreach (var (operation, result) in recovered)
                 {
                     viewModel.StartupMessages.Add($"{operation.SoftwareName} : {Describe(result)}");

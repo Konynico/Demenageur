@@ -255,12 +255,16 @@ public sealed class Engine
     }
 
     /// <summary>Reprise des opérations interrompues (au démarrage).</summary>
-    public IReadOnlyList<(StoredOperation Operation, OperationResult Result)> RecoverPending()
+    /// <summary>Opérations interrompues (crash, coupure de courant) à reprendre au démarrage.</summary>
+    public IReadOnlyList<StoredOperation> PendingOperations() => new RecoveryService(Context(NoMoveHooks.Instance)).PendingOperations();
+
+    public IReadOnlyList<(StoredOperation Operation, OperationResult Result)> RecoverPending(Action<StoredOperation>? starting = null)
     {
         var service = new RecoveryService(Context(NoMoveHooks.Instance));
         var results = new List<(StoredOperation, OperationResult)>();
         foreach (var operation in service.PendingOperations())
         {
+            starting?.Invoke(operation);
             var result = service.Recover(operation);
             LogResult(result);
             results.Add((operation, result));
