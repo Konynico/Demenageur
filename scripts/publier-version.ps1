@@ -47,9 +47,17 @@ Copy-Item (Join-Path $PSScriptRoot 'version\Installer.cmd') $folder
 $readme = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'version\LISEZMOI.txt') -Raw -Encoding UTF8).Replace('{VERSION}', $version)
 [IO.File]::WriteAllText((Join-Path $folder 'LISEZMOI.txt'), $readme, [Text.UTF8Encoding]::new($true))
 
-# API .NET plutôt que Compress-Archive (PowerShell 5.1 y écrit des « \ », hors norme ZIP).
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[IO.Compression.ZipFile]::CreateFromDirectory($folder, $zip, [IO.Compression.CompressionLevel]::Optimal, $true)
+# Entrées nommées à la main avec « / » : Compress-Archive et ZipFile de PowerShell 5.1 y écrivent des « \ », hors norme ZIP.
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+$archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($file in Get-ChildItem -LiteralPath $folder -File) {
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $file.FullName, "$name/$($file.Name)", [IO.Compression.CompressionLevel]::Optimal)
+    }
+}
+finally {
+    $archive.Dispose()
+}
 
 $zipHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
 $exeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $folder 'Demenageur.exe')).Hash.ToLowerInvariant()
